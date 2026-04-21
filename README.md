@@ -6,17 +6,59 @@ Maestro polls your ticketing system (Jira, GitHub Issues, or manual input) for w
 
 ## Quick Start
 
-### 1. Pull the image
+### 1. Install the CLI
+
+Download the latest `maestro` binary for your platform from [Releases](https://github.com/morphet81/maestro-releases/releases/latest).
+
+**macOS (Apple Silicon):**
+```bash
+curl -L -o maestro https://github.com/morphet81/maestro-releases/releases/latest/download/maestro-darwin-arm64
+chmod +x maestro
+sudo mv maestro /usr/local/bin/
+```
+
+**macOS (Intel):**
+```bash
+curl -L -o maestro https://github.com/morphet81/maestro-releases/releases/latest/download/maestro-darwin-amd64
+chmod +x maestro
+sudo mv maestro /usr/local/bin/
+```
+
+**Linux (amd64):**
+```bash
+curl -L -o maestro https://github.com/morphet81/maestro-releases/releases/latest/download/maestro-linux-amd64
+chmod +x maestro
+sudo mv maestro /usr/local/bin/
+```
+
+**Linux (arm64):**
+```bash
+curl -L -o maestro https://github.com/morphet81/maestro-releases/releases/latest/download/maestro-linux-arm64
+chmod +x maestro
+sudo mv maestro /usr/local/bin/
+```
+
+**Windows:**
+
+Download [`maestro-windows-amd64.exe`](https://github.com/morphet81/maestro-releases/releases/latest/download/maestro-windows-amd64.exe) and add it to your `PATH`.
+
+### 2. Prerequisites
+
+You need **Docker** or **Podman** installed. The CLI auto-detects which one you have (including aliases).
+
+- [Docker Desktop](https://docs.docker.com/get-docker/)
+- [Podman](https://podman.io/getting-started/installation)
+
+Pull the Maestro container image:
 
 ```bash
 docker pull ghcr.io/morphet81/maestro-releases:latest
 ```
 
-**Apple Silicon (M1/M2/M3):** The image is built for `linux/amd64`. Docker Desktop runs it via Rosetta emulation — pull with the explicit platform flag:
-
-```bash
-docker pull --platform linux/amd64 ghcr.io/morphet81/maestro-releases:latest
-```
+> **Apple Silicon (M1/M2/M3):** The image is built for `linux/amd64`. Docker Desktop runs it via Rosetta emulation — pull with the explicit platform flag:
+> ```bash
+> docker pull --platform linux/amd64 ghcr.io/morphet81/maestro-releases:latest
+> ```
 
 > **Private registry authentication:** If the image is private, authenticate first:
 > ```bash
@@ -24,134 +66,51 @@ docker pull --platform linux/amd64 ghcr.io/morphet81/maestro-releases:latest
 > gh auth token | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
 > ```
 
-### 2. Set up your project
+### 3. Set up your project
 
-Pick a preset that matches your stack and copy it:
+Create a directory for your Maestro project and run the interactive setup wizard:
 
 ```bash
-# React + Vite
-cp -r examples/react-vite/ my-maestro && cd my-maestro
-
-# Rust
-cp -r examples/rust/ my-maestro && cd my-maestro
-
-# Ruby on Rails
-cp -r examples/ruby-rails/ my-maestro && cd my-maestro
+mkdir my-maestro && cd my-maestro
+maestro setup
 ```
 
-### 3. Edit your config
+The wizard walks you through every configuration option (repo URL, ticketing system, AI provider, model, etc.) and generates all required files:
+- `config.toml` — project configuration
+- `docker-compose.yml` — container orchestration
+- `workflows/` — pipeline step definitions
+- `maestro.env` — secrets and API tokens
 
-Open `config.toml` and configure at minimum:
+### 4. Authenticate
 
-```toml
-[git]
-repo_url = "https://github.com/your-org/your-repo.git"
-
-[commands]
-install = "npm install"    # or pip install, cargo build, etc.
+```bash
+maestro auth
 ```
 
-### 4. Create docker-compose.yml
+This runs the first-time authentication flow inside the container:
+1. **GitHub CLI** (`gh`) — required for creating PRs
+2. **Claude Code** or **Cursor Agent** — your AI provider
+3. **Repository clone** — clones your project into the container's workspace
 
-```yaml
-services:
-  maestro:
-    image: ghcr.io/morphet81/maestro-releases:latest
-    platform: linux/amd64    # Required for Apple Silicon (M1/M2/M3)
-    ports:
-      - "8080:8080"
-    cap_add:
-      - NET_ADMIN
-    volumes:
-      - ./config.toml:/etc/maestro/config.toml:ro
-      - ./workflows:/etc/maestro/workflows:ro
-      - ./maestro.env:/etc/maestro/env:ro
-      - maestro-data:/home/maestro/.maestro
-      - claude-auth:/home/maestro/.claude
-      - gh-auth:/home/maestro/.config/gh
-      - workspace:/workspace
-      - npm-cache:/home/maestro/.npm
-      - mise-data:/home/maestro/.local/share/mise
-      - mise-cache:/home/maestro/.cache/mise
-    environment:
-      - MAESTRO_CONFIG=/etc/maestro/config.toml
-      - MAESTRO_HOME=/home/maestro
-      - MAESTRO_DATA_DIR=/home/maestro/.maestro
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+### 5. Start Maestro
 
-volumes:
-  maestro-data:
-  claude-auth:
-  gh-auth:
-  workspace:
-  npm-cache:
-  mise-data:
-  mise-cache:
+```bash
+maestro start
 ```
 
-### 5. First-time setup
+Open **http://localhost:8080** in your browser.
+
+### Other commands
+
+```bash
+maestro stop       # stop Maestro services
+maestro restart    # restart Maestro services
+```
 
 > **Multi-project isolation:** Docker Compose automatically prefixes all volumes with
 > the directory name (e.g., `my-app_claude-auth`, `my-app_workspace`). To run Maestro
 > on multiple projects simultaneously, use separate directories — each one gets fully
 > isolated auth, workspace, and caches with no configuration needed.
-
-**Docker:**
-```bash
-docker compose run --rm -it --network=host maestro setup
-```
-
-**Podman:**
-```bash
-touch maestro.env    # create if missing (optional, for API tokens)
-P=$(basename "$(pwd)")
-
-podman run --rm -it \
-  --network=host \
-  --security-opt=label=disable \
-  -v "$(pwd)/config.toml":/etc/maestro/config.toml:ro \
-  -v "$(pwd)/workflows":/etc/maestro/workflows:ro \
-  -v "$(pwd)/maestro.env":/etc/maestro/env:ro \
-  -v "${P}_claude-auth":/home/maestro/.claude \
-  -v "${P}_cursor-auth":/home/maestro/.cursor \
-  -v "${P}_gh-auth":/home/maestro/.config/gh \
-  -v "${P}_workspace":/workspace \
-  -v "${P}_npm-cache":/home/maestro/.npm \
-  -v "${P}_mise-data":/home/maestro/.local/share/mise \
-  -v "${P}_mise-cache":/home/maestro/.cache/mise \
-  -e MAESTRO_CONFIG=/etc/maestro/config.toml \
-  -e MAESTRO_HOME=/home/maestro \
-  -e NODE_OPTIONS=--dns-result-order=ipv4first \
-  ghcr.io/morphet81/maestro-releases:latest setup
-```
-
-The `P=...` variable prefixes volume names with your directory name so each project
-is isolated — matching what Docker Compose does automatically.
-
-This walks you through authenticating:
-1. **GitHub CLI** (`gh`) — required for creating PRs
-2. **Claude Code** or **Cursor Agent** — your AI provider
-3. **Repository clone** — clones your project into the container's workspace
-
-### 6. Start Maestro
-
-**Docker:**
-```bash
-docker compose up -d
-```
-
-**Podman:**
-```bash
-podman compose up -d
-```
-
-Open **http://localhost:8080** in your browser.
 
 ---
 
@@ -171,7 +130,7 @@ Maestro supports three modes:
 
 | Provider | Config | Setup |
 |----------|--------|-------|
-| **Claude Code** (default) | `provider = "claude"` | Authenticated during `make setup` or via `CLAUDE_CODE_OAUTH_TOKEN` |
+| **Claude Code** (default) | `provider = "claude"` | Authenticated during `maestro auth` or via `CLAUDE_CODE_OAUTH_TOKEN` |
 | **Cursor Agent** | `provider = "cursor"` | Set `cursor_cli = "agent"` and authenticate via `CURSOR_API_KEY` |
 
 ### Workflow Steps
@@ -302,6 +261,78 @@ Each preset is self-contained — copy the entire folder and edit `config.toml`:
 | [`examples/ruby-rails/`](examples/ruby-rails/) | Ruby on Rails | Rails Server, Console, Sidekiq |
 
 Each preset includes: `config.toml`, `docker-compose.yml`, `maestro.env`, and `workflows/` (ticket, review, merge-base steps).
+
+---
+
+## Manual Setup (without the CLI)
+
+If you prefer not to use the `maestro` CLI, you can set up everything manually.
+
+### 1. Pick a preset and copy it
+
+```bash
+cp -r examples/react-vite/ my-maestro && cd my-maestro
+```
+
+### 2. Edit config.toml
+
+Configure at minimum:
+
+```toml
+[git]
+repo_url = "https://github.com/your-org/your-repo.git"
+
+[commands]
+install = "npm install"    # or pip install, cargo build, etc.
+```
+
+### 3. First-time setup
+
+**Docker:**
+```bash
+docker compose run --rm -it --network=host maestro setup
+```
+
+**Podman:**
+```bash
+touch maestro.env    # create if missing (optional, for API tokens)
+P=$(basename "$(pwd)")
+
+podman run --rm -it \
+  --network=host \
+  --security-opt=label=disable \
+  -v "$(pwd)/config.toml":/etc/maestro/config.toml:ro \
+  -v "$(pwd)/workflows":/etc/maestro/workflows:ro \
+  -v "$(pwd)/maestro.env":/etc/maestro/env:ro \
+  -v "${P}_claude-auth":/home/maestro/.claude \
+  -v "${P}_cursor-auth":/home/maestro/.cursor \
+  -v "${P}_gh-auth":/home/maestro/.config/gh \
+  -v "${P}_workspace":/workspace \
+  -v "${P}_npm-cache":/home/maestro/.npm \
+  -v "${P}_mise-data":/home/maestro/.local/share/mise \
+  -v "${P}_mise-cache":/home/maestro/.cache/mise \
+  -e MAESTRO_CONFIG=/etc/maestro/config.toml \
+  -e MAESTRO_HOME=/home/maestro \
+  -e NODE_OPTIONS=--dns-result-order=ipv4first \
+  ghcr.io/morphet81/maestro-releases:latest setup
+```
+
+The `P=...` variable prefixes volume names with your directory name so each project
+is isolated — matching what Docker Compose does automatically.
+
+### 4. Start Maestro
+
+**Docker:**
+```bash
+docker compose up -d
+```
+
+**Podman:**
+```bash
+podman compose up -d
+```
+
+Open **http://localhost:8080** in your browser.
 
 ---
 
