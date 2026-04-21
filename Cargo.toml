@@ -1,6 +1,6 @@
 [package]
 name = "maestro"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 description = "Interactive CLI for managing Maestro orchestration containers"
 publish = false
