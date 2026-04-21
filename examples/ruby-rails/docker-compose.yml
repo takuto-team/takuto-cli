@@ -15,7 +15,6 @@ services:
   maestro:
     image: ghcr.io/morphet81/maestro-releases:latest
     platform: linux/amd64    # Required for Apple Silicon (M1/M2/M3)
-    container_name: maestro
     ports:
       - "8080:8080"
     cap_add:
@@ -66,7 +65,6 @@ services:
   # resolve identically from both containers.
   dind:
     image: docker:27-dind
-    container_name: maestro-dind
     privileged: true
     ports:
       # Worker/editor ports — offset by 100 to avoid conflicts

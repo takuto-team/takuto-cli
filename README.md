@@ -57,7 +57,7 @@ install = "npm install"    # or pip install, cargo build, etc.
 services:
   maestro:
     image: ghcr.io/morphet81/maestro-releases:latest
-    container_name: maestro
+    platform: linux/amd64    # Required for Apple Silicon (M1/M2/M3)
     ports:
       - "8080:8080"
     cap_add:
@@ -97,6 +97,11 @@ volumes:
 
 ### 5. First-time setup
 
+> **Multi-project isolation:** Each project directory gets its own set of Docker volumes
+> (auth, workspace, caches). Volumes are prefixed with the directory name automatically
+> by Docker Compose. To run Maestro on multiple projects simultaneously, simply use
+> separate directories (e.g., `my-app-maestro/`, `other-project-maestro/`).
+
 **Docker Compose:**
 ```bash
 docker compose run --rm -it --network=host maestro setup
@@ -107,20 +112,22 @@ docker compose run --rm -it --network=host maestro setup
 # Create maestro.env if it doesn't exist (optional, for API tokens)
 touch maestro.env
 
+# Use your project directory name as a volume prefix for isolation
+P=$(basename "$(pwd)")
+
 podman run --rm -it \
-  --platform linux/amd64 \
   --network=host \
   --security-opt=label=disable \
   -v "$(pwd)/config.toml":/etc/maestro/config.toml:ro \
   -v "$(pwd)/workflows":/etc/maestro/workflows:ro \
   -v "$(pwd)/maestro.env":/etc/maestro/env:ro \
-  -v maestro_claude-auth:/home/maestro/.claude \
-  -v maestro_cursor-auth:/home/maestro/.cursor \
-  -v maestro_gh-auth:/home/maestro/.config/gh \
-  -v maestro_workspace:/workspace \
-  -v maestro_npm-cache:/home/maestro/.npm \
-  -v maestro_mise-data:/home/maestro/.local/share/mise \
-  -v maestro_mise-cache:/home/maestro/.cache/mise \
+  -v "${P}_claude-auth":/home/maestro/.claude \
+  -v "${P}_cursor-auth":/home/maestro/.cursor \
+  -v "${P}_gh-auth":/home/maestro/.config/gh \
+  -v "${P}_workspace":/workspace \
+  -v "${P}_npm-cache":/home/maestro/.npm \
+  -v "${P}_mise-data":/home/maestro/.local/share/mise \
+  -v "${P}_mise-cache":/home/maestro/.cache/mise \
   -e MAESTRO_CONFIG=/etc/maestro/config.toml \
   -e MAESTRO_HOME=/home/maestro \
   -e NODE_OPTIONS=--dns-result-order=ipv4first \
