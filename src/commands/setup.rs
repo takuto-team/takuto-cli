@@ -108,11 +108,64 @@ pub fn run() -> Result<()> {
         .interact()?;
     config.agent.provider = provider_options[provider_idx].to_string();
 
-    config.agent.model = Input::new()
-        .with_prompt("Model (empty for default)")
-        .default(config.agent.model.clone())
-        .allow_empty(true)
-        .interact_text()?;
+    {
+        let mut model_options: Vec<&str> = match config.agent.provider.as_str() {
+            "claude" => vec![
+                "(default)",
+                "claude-opus-4-7",
+                "claude-opus-4-6",
+                "claude-sonnet-4-6",
+                "claude-haiku-4-5-20251001",
+                "claude-sonnet-4-5-20250929",
+                "Custom...",
+            ],
+            "cursor" => vec![
+                "(default)",
+                "claude-opus-4-7",
+                "claude-sonnet-4-6",
+                "gpt-5.4",
+                "gpt-5",
+                "gpt-5-mini",
+                "gemini-3.1-pro",
+                "gemini-3-flash",
+                "Custom...",
+            ],
+            _ => vec!["(default)", "Custom..."],
+        };
+
+        // If current model is set and not already in the list, insert it after (default)
+        let current = config.agent.model.as_str();
+        let current_in_list = current.is_empty()
+            || model_options.iter().any(|&o| o == current);
+        if !current_in_list {
+            model_options.insert(1, Box::leak(current.to_string().into_boxed_str()));
+        }
+
+        let default_idx = if current.is_empty() {
+            0
+        } else {
+            model_options.iter().position(|&o| o == current).unwrap_or(0)
+        };
+
+        let model_idx = Select::new()
+            .with_prompt("Model")
+            .items(&model_options)
+            .default(default_idx)
+            .interact()?;
+
+        let selected = model_options[model_idx];
+        config.agent.model = if selected == "(default)" {
+            String::new()
+        } else if selected == "Custom..." {
+            Input::new()
+                .with_prompt("Enter model name")
+                .default(config.agent.model.clone())
+                .allow_empty(true)
+                .interact_text()?
+        } else {
+            selected.to_string()
+        };
+    }
 
     config.agent.step_timeout_secs = Input::new()
         .with_prompt("Step timeout (seconds)")
