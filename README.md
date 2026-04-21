@@ -268,7 +268,7 @@ Each preset is self-contained — copy the entire folder and edit `config.toml`:
 | [`examples/rust/`](examples/rust/) | Rust | Run Server, cargo watch tests |
 | [`examples/ruby-rails/`](examples/ruby-rails/) | Ruby on Rails | Rails Server, Console, Sidekiq |
 
-Each preset includes: `config.toml`, `docker-compose.yml`, `maestro.env`, and `workflows/` (ticket, review, merge-base steps).
+Each preset includes: `maestro.yml` and `.maestro/` (config.toml, maestro.env, workflows/).
 
 ---
 
@@ -297,7 +297,7 @@ install = "npm install"    # or pip install, cargo build, etc.
 All configuration files live in the `.maestro/` subdirectory:
 ```
 my-project/
-  docker-compose.yml
+  maestro.yml
   .maestro/
     config.toml        # project configuration
     maestro.env        # secrets and API tokens (optional)
@@ -311,7 +311,7 @@ my-project/
 
 **Docker:**
 ```bash
-docker compose run --rm -it --network=host maestro setup
+docker compose -f maestro.yml run --rm -it --network=host maestro setup
 ```
 
 **Podman:**
@@ -345,12 +345,12 @@ is isolated — matching what Docker Compose does automatically.
 
 **Docker:**
 ```bash
-docker compose up -d
+docker compose -f maestro.yml up -d
 ```
 
 **Podman:**
 ```bash
-podman compose up -d
+podman compose -f maestro.yml up -d
 ```
 
 Open **http://localhost:8080** in your browser.

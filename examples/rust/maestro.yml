@@ -1,9 +1,9 @@
 # Maestro — Docker Compose with workflow isolation (DinD sidecar)
 #
 # Usage:
-#   docker compose up -d                                              # start
-#   docker compose run --rm -it --network=host maestro setup          # first-time auth
-#   docker compose logs -f maestro                                    # tail logs
+#   maestro start                                                     # start
+#   maestro auth                                                      # first-time auth
+#   docker compose -f maestro.yml logs -f maestro                     # tail logs
 #
 # Prerequisites:
 #   - .maestro/config.toml (copy from examples/config.toml and edit)
