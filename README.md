@@ -14,23 +14,17 @@ docker pull ghcr.io/morphet81/maestro-releases:latest
 
 ### 2. Set up your project
 
-```bash
-mkdir maestro && cd maestro
-
-# Download example configs
-docker run --rm ghcr.io/morphet81/maestro-releases:latest cat /etc/maestro/examples/config.toml.example > config.toml
-docker run --rm ghcr.io/morphet81/maestro-releases:latest cat /etc/maestro/examples/maestro.env.example > maestro.env
-
-# Create workflow directory
-mkdir workflows
-```
-
-Or copy the examples from this repository:
+Pick a preset that matches your stack and copy it:
 
 ```bash
-cp examples/config.toml config.toml
-cp examples/maestro.env maestro.env
-cp -r examples/workflows/ workflows/
+# React + Vite
+cp -r examples/react-vite/ my-maestro && cd my-maestro
+
+# Rust
+cp -r examples/rust/ my-maestro && cd my-maestro
+
+# Ruby on Rails
+cp -r examples/ruby-rails/ my-maestro && cd my-maestro
 ```
 
 ### 3. Edit your config
@@ -248,17 +242,15 @@ Available in agent step prompts and command step commands:
 
 This repository includes ready-to-use example configurations:
 
-| File | Description |
-|------|-------------|
-| [`examples/config.toml`](examples/config.toml) | Full annotated configuration |
-| [`examples/maestro.env`](examples/maestro.env) | Environment variables template |
-| [`examples/docker-compose.yml`](examples/docker-compose.yml) | Docker Compose with DinD workflow isolation |
-| [`examples/presets/react-vite/`](examples/presets/react-vite/) | React + Vite preset (dev server, Storybook, preview build) |
-| [`examples/presets/rust/`](examples/presets/rust/) | Rust preset (cargo run, cargo watch tests) |
-| [`examples/presets/ruby-rails/`](examples/presets/ruby-rails/) | Ruby on Rails preset (Rails server, console, Sidekiq) |
-| [`examples/workflows/ticket.toml`](examples/workflows/ticket.toml) | Main ticket pipeline (implement → review → test → PR) |
-| [`examples/workflows/review.toml`](examples/workflows/review.toml) | PR review comment handler |
-| [`examples/workflows/merge_base.toml`](examples/workflows/merge_base.toml) | Base branch merge workflow |
+Each preset is self-contained — copy the entire folder and edit `config.toml`:
+
+| Preset | Stack | Run Commands |
+|--------|-------|-------------|
+| [`examples/react-vite/`](examples/react-vite/) | React + Vite | Dev Server, Storybook, Preview Build |
+| [`examples/rust/`](examples/rust/) | Rust | Run Server, cargo watch tests |
+| [`examples/ruby-rails/`](examples/ruby-rails/) | Ruby on Rails | Rails Server, Console, Sidekiq |
+
+Each preset includes: `config.toml`, `docker-compose.yml`, `maestro.env`, and `workflows/` (ticket, review, merge-base steps).
 
 ---
 
