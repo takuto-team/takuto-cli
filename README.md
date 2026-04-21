@@ -307,4 +307,4 @@ Each preset includes: `config.toml`, `docker-compose.yml`, `maestro.env`, and `w
 
 ## License
 
-Proprietary. All rights reserved.
+Licensed under the [Server Side Public License (SSPL) v1](LICENSE).
