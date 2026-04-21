@@ -5,8 +5,12 @@ use std::process::Command;
 use crate::runtime::Runtime;
 
 pub fn run(rt: &Runtime) -> Result<()> {
+    let cwd = std::env::current_dir()?;
+    let compose_file = crate::find_compose_file(&cwd)
+        .ok_or_else(|| anyhow::anyhow!("No maestro.yml or docker-compose.yml found."))?;
+
     let compose = rt
-        .compose_command()
+        .compose_command(&compose_file)
         .ok_or_else(|| anyhow::anyhow!(
             "Podman Compose is not installed.\n\
              Install it with: pip install podman-compose\n\

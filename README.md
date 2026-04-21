@@ -76,10 +76,18 @@ maestro setup
 ```
 
 The wizard walks you through every configuration option (repo URL, ticketing system, AI provider, model, etc.) and generates all required files:
-- `config.toml` — project configuration
-- `docker-compose.yml` — container orchestration
-- `workflows/` — pipeline step definitions
-- `maestro.env` — secrets and API tokens
+
+```
+my-project/
+  maestro.yml                # container orchestration
+  .maestro/
+    config.toml              # project configuration
+    maestro.env              # secrets and API tokens (optional)
+    workflows/               # pipeline step definitions
+      ticket.toml
+      review.toml
+      merge_base.toml
+```
 
 ### 4. Authenticate
 

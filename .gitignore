@@ -1,6 +1,5 @@
 /target
 .DS_Store
-/config.toml
-/maestro.env
-/workflows/
+/.maestro/
+/maestro.yml
 /docker-compose.yml

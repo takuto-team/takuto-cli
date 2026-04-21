@@ -3,6 +3,7 @@ use console::style;
 use std::process::Command;
 
 use crate::runtime::Runtime;
+use crate::MAESTRO_DIR;
 
 const IMAGE: &str = "ghcr.io/morphet81/maestro-releases:latest";
 
@@ -36,17 +37,22 @@ pub fn run(rt: &Runtime) -> Result<()> {
         style("→").cyan().bold()
     );
 
+    let cwd = std::env::current_dir().context("Failed to get current directory")?;
+    let compose_file = crate::find_compose_file(&cwd)
+        .ok_or_else(|| anyhow::anyhow!("No maestro.yml or docker-compose.yml found."))?;
+
     let status = match rt {
         Runtime::Docker { compose } => {
+            let file_arg = compose_file.to_string_lossy().to_string();
             let mut cmd = match compose {
                 crate::runtime::ComposeVariant::Plugin => {
                     let mut c = Command::new("docker");
-                    c.args(["compose", "run", "--rm", "-it", "--network=host", "maestro", "setup"]);
+                    c.args(["compose", "-f", &file_arg, "run", "--rm", "-it", "--network=host", "maestro", "setup"]);
                     c
                 }
                 crate::runtime::ComposeVariant::Standalone => {
                     let mut c = Command::new("docker-compose");
-                    c.args(["run", "--rm", "-it", "--network=host", "maestro", "setup"]);
+                    c.args(["-f", &file_arg, "run", "--rm", "-it", "--network=host", "maestro", "setup"]);
                     c
                 }
             };
@@ -54,7 +60,7 @@ pub fn run(rt: &Runtime) -> Result<()> {
         }
         Runtime::Podman { .. } => {
             // Podman compose doesn't support -it, use raw podman run
-            let cwd = std::env::current_dir().context("Failed to get current directory")?;
+            let mdir = cwd.join(MAESTRO_DIR);
             let p = compose_project_name()?;
 
             let mut cmd = Command::new("podman");
@@ -62,10 +68,10 @@ pub fn run(rt: &Runtime) -> Result<()> {
             cmd.args(["--network=host"]);
             cmd.args(["--security-opt=label=disable"]);
 
-            // Config mounts (read-only)
-            cmd.args(["-v", &format!("{}/config.toml:/etc/maestro/config.toml:ro", cwd.display())]);
-            cmd.args(["-v", &format!("{}/workflows:/etc/maestro/workflows:ro", cwd.display())]);
-            cmd.args(["-v", &format!("{}/maestro.env:/etc/maestro/env:ro", cwd.display())]);
+            // Config mounts from .maestro/ (read-only)
+            cmd.args(["-v", &format!("{}:/etc/maestro/config.toml:ro", mdir.join("config.toml").display())]);
+            cmd.args(["-v", &format!("{}:/etc/maestro/workflows:ro", mdir.join("workflows").display())]);
+            cmd.args(["-v", &format!("{}:/etc/maestro/env:ro", mdir.join("maestro.env").display())]);
 
             // Named volumes (project-isolated, matching Compose naming)
             cmd.args(["-v", &format!("{p}_claude-auth:/home/maestro/.claude")]);

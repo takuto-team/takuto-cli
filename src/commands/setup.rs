@@ -6,6 +6,7 @@ use std::path::Path;
 
 use crate::config::*;
 use crate::templates;
+use crate::MAESTRO_DIR;
 
 pub fn run() -> Result<()> {
     println!(
@@ -14,13 +15,19 @@ pub fn run() -> Result<()> {
     );
     println!();
 
-    // Load existing config or start fresh
+    // Ensure .maestro directory exists
     let cwd = std::env::current_dir()?;
-    let config_path = cwd.join("config.toml");
+    let mdir = cwd.join(MAESTRO_DIR);
+    if !mdir.exists() {
+        fs::create_dir_all(&mdir)?;
+    }
+
+    // Load existing config or start fresh
+    let config_path = mdir.join("config.toml");
     let mut config = if config_path.exists() {
         let content = fs::read_to_string(&config_path)?;
         println!(
-            "  {} Loading existing config.toml\n",
+            "  {} Loading existing .maestro/config.toml\n",
             style("✓").green().bold()
         );
         toml::from_str::<MaestroConfig>(&content).unwrap_or_default()
@@ -340,19 +347,19 @@ pub fn run() -> Result<()> {
     println!();
     section_header("Writing files");
 
-    // config.toml
+    // .maestro/config.toml
     let toml_str = toml::to_string_pretty(&config)?;
     fs::write(&config_path, &toml_str)?;
-    println!("  {} config.toml", style("wrote").green());
+    println!("  {} .maestro/config.toml", style("wrote").green());
 
-    // docker-compose.yml
-    write_if_missing(&cwd, "docker-compose.yml", templates::DOCKER_COMPOSE)?;
+    // maestro.yml (at project root)
+    write_if_missing(&cwd, "maestro.yml", templates::DOCKER_COMPOSE)?;
 
-    // maestro.env
-    write_if_missing(&cwd, "maestro.env", templates::MAESTRO_ENV)?;
+    // .maestro/maestro.env
+    write_if_missing(&mdir, "maestro.env", templates::MAESTRO_ENV)?;
 
-    // workflows/
-    let workflows_dir = cwd.join("workflows");
+    // .maestro/workflows/
+    let workflows_dir = mdir.join("workflows");
     if !workflows_dir.exists() {
         fs::create_dir_all(&workflows_dir)?;
     }

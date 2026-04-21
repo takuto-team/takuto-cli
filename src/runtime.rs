@@ -15,17 +15,22 @@ pub enum Runtime {
 }
 
 impl Runtime {
-    /// Returns the base command for compose operations (e.g., "docker compose" or "podman compose").
+    /// Returns the base compose command with `-f <compose_file>` included.
     /// Returns None for Podman without compose.
-    pub fn compose_command(&self) -> Option<Vec<String>> {
+    pub fn compose_command(&self, compose_file: &std::path::Path) -> Option<Vec<String>> {
+        let file_arg = compose_file.to_string_lossy().to_string();
         match self {
             Runtime::Docker { compose } => match compose {
-                ComposeVariant::Plugin => Some(vec!["docker".into(), "compose".into()]),
-                ComposeVariant::Standalone => Some(vec!["docker-compose".into()]),
+                ComposeVariant::Plugin => {
+                    Some(vec!["docker".into(), "compose".into(), "-f".into(), file_arg])
+                }
+                ComposeVariant::Standalone => {
+                    Some(vec!["docker-compose".into(), "-f".into(), file_arg])
+                }
             },
             Runtime::Podman { has_compose } => {
                 if *has_compose {
-                    Some(vec!["podman".into(), "compose".into()])
+                    Some(vec!["podman".into(), "compose".into(), "-f".into(), file_arg])
                 } else {
                     None
                 }
