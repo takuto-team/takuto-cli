@@ -8,39 +8,39 @@ Maestro polls your ticketing system (Jira, GitHub Issues, or manual input) for w
 
 ### 1. Install the CLI
 
-Download the latest `maestro` binary for your platform from [Releases](https://github.com/morphet81/maestro-releases/releases/latest).
+Download the latest `maestro` binary for your platform from [Releases](https://github.com/morphet81/maestro/releases/latest).
 
 **macOS (Apple Silicon):**
 ```bash
-curl -L -o maestro https://github.com/morphet81/maestro-releases/releases/latest/download/maestro-darwin-arm64
+curl -L -o maestro https://github.com/morphet81/maestro/releases/latest/download/maestro-darwin-arm64
 chmod +x maestro
 sudo mv maestro /usr/local/bin/
 ```
 
 **macOS (Intel):**
 ```bash
-curl -L -o maestro https://github.com/morphet81/maestro-releases/releases/latest/download/maestro-darwin-amd64
+curl -L -o maestro https://github.com/morphet81/maestro/releases/latest/download/maestro-darwin-amd64
 chmod +x maestro
 sudo mv maestro /usr/local/bin/
 ```
 
 **Linux (amd64):**
 ```bash
-curl -L -o maestro https://github.com/morphet81/maestro-releases/releases/latest/download/maestro-linux-amd64
+curl -L -o maestro https://github.com/morphet81/maestro/releases/latest/download/maestro-linux-amd64
 chmod +x maestro
 sudo mv maestro /usr/local/bin/
 ```
 
 **Linux (arm64):**
 ```bash
-curl -L -o maestro https://github.com/morphet81/maestro-releases/releases/latest/download/maestro-linux-arm64
+curl -L -o maestro https://github.com/morphet81/maestro/releases/latest/download/maestro-linux-arm64
 chmod +x maestro
 sudo mv maestro /usr/local/bin/
 ```
 
 **Windows:**
 
-Download [`maestro-windows-amd64.exe`](https://github.com/morphet81/maestro-releases/releases/latest/download/maestro-windows-amd64.exe) and add it to your `PATH`.
+Download [`maestro-windows-amd64.exe`](https://github.com/morphet81/maestro/releases/latest/download/maestro-windows-amd64.exe) and add it to your `PATH`.
 
 ### 2. Prerequisites
 
@@ -52,12 +52,12 @@ You need **Docker** or **Podman** installed. The CLI auto-detects which one you 
 Pull the Maestro container image:
 
 ```bash
-docker pull ghcr.io/morphet81/maestro-releases:latest
+docker pull ghcr.io/morphet81/maestro:latest
 ```
 
 > **Apple Silicon (M1/M2/M3):** The image is built for `linux/amd64`. Docker Desktop runs it via Rosetta emulation — pull with the explicit platform flag:
 > ```bash
-> docker pull --platform linux/amd64 ghcr.io/morphet81/maestro-releases:latest
+> docker pull --platform linux/amd64 ghcr.io/morphet81/maestro:latest
 > ```
 
 > **Private registry authentication:** If the image is private, authenticate first:
@@ -335,7 +335,7 @@ podman run --rm -it \
   -e MAESTRO_CONFIG=/etc/maestro/config.toml \
   -e MAESTRO_HOME=/home/maestro \
   -e NODE_OPTIONS=--dns-result-order=ipv4first \
-  ghcr.io/morphet81/maestro-releases:latest setup
+  ghcr.io/morphet81/maestro:latest setup
 ```
 
 The `P=...` variable prefixes volume names with your directory name so each project

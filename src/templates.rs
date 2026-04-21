@@ -20,7 +20,7 @@ pub const DOCKER_COMPOSE: &str = r#"# Maestro — Docker Compose with workflow i
 services:
   # ── Maestro application ──────────────────────────────────────────────────────
   maestro:
-    image: ghcr.io/morphet81/maestro-releases:latest
+    image: ghcr.io/morphet81/maestro:latest
     platform: linux/amd64    # Required for Apple Silicon (M1/M2/M3)
     ports:
       - "8080:8080"

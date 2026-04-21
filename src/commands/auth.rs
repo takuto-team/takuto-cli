@@ -5,7 +5,7 @@ use std::process::Command;
 use crate::runtime::Runtime;
 use crate::MAESTRO_DIR;
 
-const IMAGE: &str = "ghcr.io/morphet81/maestro-releases:latest";
+const IMAGE: &str = "ghcr.io/morphet81/maestro:latest";
 
 /// Normalize a directory name into a Compose project name.
 /// Docker/Podman Compose lowercase the directory name and strip everything

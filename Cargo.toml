@@ -5,7 +5,7 @@ edition = "2021"
 description = "Interactive CLI for managing Maestro orchestration containers"
 publish = false
 license-file = "LICENSE"
-repository = "https://github.com/morphet81/maestro-releases"
+repository = "https://github.com/morphet81/maestro"
 
 [workspace]
 
