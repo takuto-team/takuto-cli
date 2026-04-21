@@ -97,8 +97,30 @@ volumes:
 
 ### 5. First-time setup
 
+**Docker Compose:**
 ```bash
 docker compose run --rm -it --network=host maestro setup
+```
+
+**Podman users** (`podman-compose` doesn't support `-it` as combined flags):
+```bash
+podman run --rm -it \
+  --network=host \
+  --security-opt=label=disable \
+  -v "$(pwd)/config.toml":/etc/maestro/config.toml:ro \
+  -v "$(pwd)/workflows":/etc/maestro/workflows:ro \
+  -v "$(pwd)/maestro.env":/etc/maestro/env:ro \
+  -v maestro_claude-auth:/home/maestro/.claude \
+  -v maestro_cursor-auth:/home/maestro/.cursor \
+  -v maestro_gh-auth:/home/maestro/.config/gh \
+  -v maestro_workspace:/workspace \
+  -v maestro_npm-cache:/home/maestro/.npm \
+  -v maestro_mise-data:/home/maestro/.local/share/mise \
+  -v maestro_mise-cache:/home/maestro/.cache/mise \
+  -e MAESTRO_CONFIG=/etc/maestro/config.toml \
+  -e MAESTRO_HOME=/home/maestro \
+  -e NODE_OPTIONS=--dns-result-order=ipv4first \
+  ghcr.io/morphet81/maestro-releases:latest setup
 ```
 
 This walks you through authenticating:
