@@ -12,6 +12,18 @@ Maestro polls your ticketing system (Jira, GitHub Issues, or manual input) for w
 docker pull ghcr.io/morphet81/maestro-releases:latest
 ```
 
+**Apple Silicon (M1/M2/M3):** The image is built for `linux/amd64`. Docker Desktop runs it via Rosetta emulation — pull with the explicit platform flag:
+
+```bash
+docker pull --platform linux/amd64 ghcr.io/morphet81/maestro-releases:latest
+```
+
+> **Private registry authentication:** If the image is private, authenticate first:
+> ```bash
+> gh auth refresh -h github.com -s read:packages
+> gh auth token | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
+> ```
+
 ### 2. Set up your project
 
 Pick a preset that matches your stack and copy it:
