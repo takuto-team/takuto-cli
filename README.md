@@ -274,7 +274,7 @@ If you prefer not to use the `maestro` CLI, you can set up everything manually.
 cp -r examples/react-vite/ my-project && cd my-project
 ```
 
-### 2. Edit config.toml
+### 2. Edit .maestro/config.toml
 
 Configure at minimum:
 
@@ -286,6 +286,19 @@ repo_url = "https://github.com/your-org/your-repo.git"
 install = "npm install"    # or pip install, cargo build, etc.
 ```
 
+All configuration files live in the `.maestro/` subdirectory:
+```
+my-project/
+  docker-compose.yml
+  .maestro/
+    config.toml        # project configuration
+    maestro.env        # secrets and API tokens (optional)
+    workflows/         # pipeline step definitions
+      ticket.toml
+      review.toml
+      merge_base.toml
+```
+
 ### 3. First-time setup
 
 **Docker:**
@@ -295,15 +308,15 @@ docker compose run --rm -it --network=host maestro setup
 
 **Podman:**
 ```bash
-touch maestro.env    # create if missing (optional, for API tokens)
+touch .maestro/maestro.env    # create if missing (optional, for API tokens)
 P=$(basename "$(pwd)")
 
 podman run --rm -it \
   --network=host \
   --security-opt=label=disable \
-  -v "$(pwd)/config.toml":/etc/maestro/config.toml:ro \
-  -v "$(pwd)/workflows":/etc/maestro/workflows:ro \
-  -v "$(pwd)/maestro.env":/etc/maestro/env:ro \
+  -v "$(pwd)/.maestro/config.toml":/etc/maestro/config.toml:ro \
+  -v "$(pwd)/.maestro/workflows":/etc/maestro/workflows:ro \
+  -v "$(pwd)/.maestro/maestro.env":/etc/maestro/env:ro \
   -v "${P}_claude-auth":/home/maestro/.claude \
   -v "${P}_cursor-auth":/home/maestro/.cursor \
   -v "${P}_gh-auth":/home/maestro/.config/gh \

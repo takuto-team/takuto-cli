@@ -6,9 +6,9 @@
 #   docker compose logs -f maestro                                    # tail logs
 #
 # Prerequisites:
-#   - config.toml (copy from examples/config.toml and edit)
-#   - maestro.env (copy from examples/maestro.env — optional, for API tokens)
-#   - workflows/  (copy from examples/workflows/ — optional, for custom steps)
+#   - .maestro/config.toml (copy from examples/config.toml and edit)
+#   - .maestro/maestro.env (copy from examples/maestro.env — optional, for API tokens)
+#   - .maestro/workflows/ (copy from examples/workflows/ — optional, for custom steps)
 
 services:
   # ── Maestro application ──────────────────────────────────────────────────────
@@ -21,11 +21,11 @@ services:
       - NET_ADMIN
     volumes:
       # Configuration (required)
-      - ./config.toml:/etc/maestro/config.toml:ro
+      - ./.maestro/config.toml:/etc/maestro/config.toml:ro
       # Custom workflow steps (optional)
-      - ./workflows:/etc/maestro/workflows:ro
+      - ./.maestro/workflows:/etc/maestro/workflows:ro
       # Environment variables / secrets (optional)
-      - ./maestro.env:/etc/maestro/env:ro
+      - ./.maestro/maestro.env:/etc/maestro/env:ro
       # Persistent state
       - maestro-data:/home/maestro/.maestro
       - claude-auth:/home/maestro/.claude
@@ -86,9 +86,9 @@ services:
       - playwright-cache:/shared-auth/playwright-cache
       - vscode-data:/shared-auth/vscode
       # Config for worker egress rules
-      - ./config.toml:/etc/maestro/config.toml:ro
-      - ./workflows:/etc/maestro/workflows:ro
-      - ./maestro.env:/etc/maestro/env:ro
+      - ./.maestro/config.toml:/etc/maestro/config.toml:ro
+      - ./.maestro/workflows:/etc/maestro/workflows:ro
+      - ./.maestro/maestro.env:/etc/maestro/env:ro
     healthcheck:
       test: ["CMD", "docker", "info"]
       interval: 5s

@@ -12,7 +12,7 @@ Ready-to-use Maestro configuration for Rust projects.
 ## Setup
 
 ```bash
-cp config.toml /path/to/your/maestro/config.toml
+cp .maestro/config.toml /path/to/your/maestro/.maestro/config.toml
 ```
 
 Edit the values marked with `←` (repo URL, branch, ticketing system).
