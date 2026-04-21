@@ -357,6 +357,9 @@ Open **http://localhost:8080** in your browser.
 
 ---
 
-## License
+## Source & License
 
-Licensed under the [Server Side Public License (SSPL) v1](LICENSE).
+This repository contains the Maestro installer and distribution tooling, licensed under [MIT](LICENSE).
+
+The Maestro application itself is open source under [AGPL v3](https://github.com/morphet81/maestro-core/blob/main/LICENSE).
+Source code is available at [github.com/morphet81/maestro-core](https://github.com/morphet81/maestro-core).
