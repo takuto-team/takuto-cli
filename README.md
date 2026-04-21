@@ -97,42 +97,55 @@ volumes:
 
 ### 5. First-time setup
 
-> **Multi-project isolation:** Each project directory gets its own set of Docker volumes
-> (auth, workspace, caches). Volumes are prefixed with the directory name automatically
-> by Docker Compose. To run Maestro on multiple projects simultaneously, simply use
-> separate directories (e.g., `my-app-maestro/`, `other-project-maestro/`).
+> **Multi-project isolation:** Docker Compose automatically prefixes all volumes with
+> the directory name (e.g., `my-app_claude-auth`, `my-app_workspace`). To run Maestro
+> on multiple projects simultaneously, use separate directories — each one gets fully
+> isolated auth, workspace, and caches with no configuration needed.
 
-**Docker Compose:**
+**Docker:**
 ```bash
 docker compose run --rm -it --network=host maestro setup
 ```
 
-**Podman users** (`podman-compose` doesn't support `-it` as combined flags):
+**Podman:**
 ```bash
-# Create maestro.env if it doesn't exist (optional, for API tokens)
-touch maestro.env
-
-# Use your project directory name as a volume prefix for isolation
-P=$(basename "$(pwd)")
-
-podman run --rm -it \
-  --network=host \
-  --security-opt=label=disable \
-  -v "$(pwd)/config.toml":/etc/maestro/config.toml:ro \
-  -v "$(pwd)/workflows":/etc/maestro/workflows:ro \
-  -v "$(pwd)/maestro.env":/etc/maestro/env:ro \
-  -v "${P}_claude-auth":/home/maestro/.claude \
-  -v "${P}_cursor-auth":/home/maestro/.cursor \
-  -v "${P}_gh-auth":/home/maestro/.config/gh \
-  -v "${P}_workspace":/workspace \
-  -v "${P}_npm-cache":/home/maestro/.npm \
-  -v "${P}_mise-data":/home/maestro/.local/share/mise \
-  -v "${P}_mise-cache":/home/maestro/.cache/mise \
-  -e MAESTRO_CONFIG=/etc/maestro/config.toml \
-  -e MAESTRO_HOME=/home/maestro \
-  -e NODE_OPTIONS=--dns-result-order=ipv4first \
-  ghcr.io/morphet81/maestro-releases:latest setup
+# podman-compose supports the same command
+podman compose run --rm -it --network=host maestro setup
 ```
+
+> **Podman troubleshooting:** If `podman compose run` fails with argument errors
+> (some versions of `podman-compose` don't support all flags), use the raw fallback:
+>
+> <details>
+> <summary>Raw podman run command</summary>
+>
+> ```bash
+> touch maestro.env    # create if missing (optional, for API tokens)
+> P=$(basename "$(pwd)")
+>
+> podman run --rm -it \
+>   --network=host \
+>   --security-opt=label=disable \
+>   -v "$(pwd)/config.toml":/etc/maestro/config.toml:ro \
+>   -v "$(pwd)/workflows":/etc/maestro/workflows:ro \
+>   -v "$(pwd)/maestro.env":/etc/maestro/env:ro \
+>   -v "${P}_claude-auth":/home/maestro/.claude \
+>   -v "${P}_cursor-auth":/home/maestro/.cursor \
+>   -v "${P}_gh-auth":/home/maestro/.config/gh \
+>   -v "${P}_workspace":/workspace \
+>   -v "${P}_npm-cache":/home/maestro/.npm \
+>   -v "${P}_mise-data":/home/maestro/.local/share/mise \
+>   -v "${P}_mise-cache":/home/maestro/.cache/mise \
+>   -e MAESTRO_CONFIG=/etc/maestro/config.toml \
+>   -e MAESTRO_HOME=/home/maestro \
+>   -e NODE_OPTIONS=--dns-result-order=ipv4first \
+>   ghcr.io/morphet81/maestro-releases:latest setup
+> ```
+>
+> The `P=...` variable prefixes volume names with your directory name so each project
+> is isolated — matching what Docker Compose does automatically.
+>
+> </details>
 
 This walks you through authenticating:
 1. **GitHub CLI** (`gh`) — required for creating PRs
@@ -141,8 +154,14 @@ This walks you through authenticating:
 
 ### 6. Start Maestro
 
+**Docker:**
 ```bash
 docker compose up -d
+```
+
+**Podman:**
+```bash
+podman compose up -d
 ```
 
 Open **http://localhost:8080** in your browser.
