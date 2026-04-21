@@ -216,16 +216,6 @@ ANTHROPIC_BASE_URL=https://custom-proxy.example.com/claude
 
 ---
 
-## Docker-in-Docker (Workflow Isolation)
-
-For isolated workflow execution (recommended for production), add a DinD sidecar. See [`examples/docker-compose.dind.yml`](examples/docker-compose.dind.yml).
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.dind.yml up -d
-```
-
----
-
 ## Dashboard Features
 
 - **Real-time workflow cards** with progress segments and live terminal output
@@ -262,8 +252,7 @@ This repository includes ready-to-use example configurations:
 |------|-------------|
 | [`examples/config.toml`](examples/config.toml) | Full annotated configuration |
 | [`examples/maestro.env`](examples/maestro.env) | Environment variables template |
-| [`examples/docker-compose.yml`](examples/docker-compose.yml) | Basic Docker Compose setup |
-| [`examples/docker-compose.dind.yml`](examples/docker-compose.dind.yml) | DinD sidecar for workflow isolation |
+| [`examples/docker-compose.yml`](examples/docker-compose.yml) | Docker Compose with DinD workflow isolation |
 | [`examples/workflows/ticket.toml`](examples/workflows/ticket.toml) | Main ticket pipeline (implement → review → test → PR) |
 | [`examples/workflows/review.toml`](examples/workflows/review.toml) | PR review comment handler |
 | [`examples/workflows/merge_base.toml`](examples/workflows/merge_base.toml) | Base branch merge workflow |

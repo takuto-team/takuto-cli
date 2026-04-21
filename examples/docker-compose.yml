@@ -1,13 +1,17 @@
-# Maestro — basic Docker Compose setup
+# Maestro — Docker Compose with workflow isolation (DinD sidecar)
 #
 # Usage:
-#   docker compose up -d
-#   docker compose run --rm -it --network=host maestro setup   # first-time auth
+#   docker compose up -d                                              # start
+#   docker compose run --rm -it --network=host maestro setup          # first-time auth
+#   docker compose logs -f maestro                                    # tail logs
 #
-# For workflow isolation (recommended), merge docker-compose.dind.yml:
-#   docker compose -f docker-compose.yml -f docker-compose.dind.yml up -d
+# Prerequisites:
+#   - config.toml (copy from examples/config.toml and edit)
+#   - maestro.env (copy from examples/maestro.env — optional, for API tokens)
+#   - workflows/  (copy from examples/workflows/ — optional, for custom steps)
 
 services:
+  # ── Maestro application ──────────────────────────────────────────────────────
   maestro:
     image: ghcr.io/morphet81/maestro-releases:latest
     container_name: maestro
@@ -18,7 +22,7 @@ services:
     volumes:
       # Configuration (required)
       - ./config.toml:/etc/maestro/config.toml:ro
-      # Custom workflow steps (optional — copy from examples/workflows/)
+      # Custom workflow steps (optional)
       - ./workflows:/etc/maestro/workflows:ro
       # Environment variables / secrets (optional)
       - ./maestro.env:/etc/maestro/env:ro
@@ -41,6 +45,9 @@ services:
       - MAESTRO_HOME=/home/maestro
       - MAESTRO_DATA_DIR=/home/maestro/.maestro
       - CURSOR_CONFIG_DIR=/home/maestro/.cursor
+      # DinD connection
+      - DOCKER_HOST=tcp://dind:2375
+      - MAESTRO_DIND_PORT_OFFSET=100
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
@@ -48,6 +55,47 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    depends_on:
+      dind:
+        condition: service_healthy
+
+  # ── Docker-in-Docker sidecar (workflow isolation) ────────────────────────────
+  # Each workflow runs in an ephemeral container: isolated filesystem, network
+  # namespace, and egress control. The workspace volume is shared so paths
+  # resolve identically from both containers.
+  dind:
+    image: docker:27-dind
+    container_name: maestro-dind
+    privileged: true
+    ports:
+      # Worker/editor ports — offset by 100 to avoid conflicts
+      - "9200-9300:9100-9200"
+    environment:
+      DOCKER_TLS_CERTDIR: ""
+    volumes:
+      - workspace:/workspace
+      - dind-storage:/var/lib/docker
+      # Auth volumes shared with worker containers
+      - claude-auth:/shared-auth/claude
+      - cursor-auth:/shared-auth/cursor
+      - gh-auth:/shared-auth/gh
+      - acli-auth:/shared-auth/acli
+      - npm-cache:/shared-auth/npm
+      - mise-data:/shared-auth/mise-data
+      - mise-cache:/shared-auth/mise-cache
+      - aws-config:/shared-auth/aws
+      - playwright-cache:/shared-auth/playwright-cache
+      - vscode-data:/shared-auth/vscode
+      # Config for worker egress rules
+      - ./config.toml:/etc/maestro/config.toml:ro
+      - ./workflows:/etc/maestro/workflows:ro
+      - ./maestro.env:/etc/maestro/env:ro
+    healthcheck:
+      test: ["CMD", "docker", "info"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
 
 volumes:
   maestro-data:
@@ -61,3 +109,5 @@ volumes:
   mise-cache:
   aws-config:
   playwright-cache:
+  dind-storage:
+  vscode-data:
