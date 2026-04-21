@@ -71,7 +71,7 @@ docker pull ghcr.io/morphet81/maestro-releases:latest
 Create a directory for your Maestro project and run the interactive setup wizard:
 
 ```bash
-mkdir my-maestro && cd my-maestro
+mkdir my-project && cd my-project
 maestro setup
 ```
 
@@ -271,7 +271,7 @@ If you prefer not to use the `maestro` CLI, you can set up everything manually.
 ### 1. Pick a preset and copy it
 
 ```bash
-cp -r examples/react-vite/ my-maestro && cd my-maestro
+cp -r examples/react-vite/ my-project && cd my-project
 ```
 
 ### 2. Edit config.toml
