@@ -1,0 +1,91 @@
+# Maestro — React + Vite project preset
+#
+# Copy this file to your Maestro working directory as config.toml and edit
+# the values marked with ← to match your project.
+
+# ── Run commands (buttons on completed workflow cards) ─────────────────────
+[[run_commands]]
+name = "Dev Server"
+command = "npm run dev -- --host 0.0.0.0"
+
+[[run_commands]]
+name = "Storybook"
+command = "npx storybook dev -p 6006 --no-open"
+
+[[run_commands]]
+name = "Preview Build"
+command = "npm run build && npm run preview -- --host 0.0.0.0"
+
+# ── General ────────────────────────────────────────────────────────────────
+[general]
+ticketing_system = "github"            # ← "none", "github", or "jira"
+poll_interval_secs = 60
+pr_merge_poll_interval_secs = 60
+max_concurrent_workflows = 1
+max_active_workflows = 0
+log_level = "info"
+ticket_workflow_steps_file = "workflows/ticket.toml"
+review_workflow_steps_file = "workflows/review.toml"
+merge_base_workflow_steps_file = "workflows/merge_base.toml"
+
+# ── Git ────────────────────────────────────────────────────────────────────
+[git]
+base_branch = "main"                   # ← your default branch
+remote = "origin"
+repo_url = "https://github.com/your-org/your-react-app.git"  # ← your repo
+repo_path = "/workspace"
+
+# ── Commands ───────────────────────────────────────────────────────────────
+[commands]
+install = "npm ci"
+pre_workflow = [
+  "npx -y skills add morphet81/cheat-sheets -a claude-code -a cursor --yes --skill '*' --global"
+]
+
+# ── Web dashboard ──────────────────────────────────────────────────────────
+[web]
+host = "0.0.0.0"
+port = 8080
+dashboard_username = ""                # ← set both for login protection
+dashboard_password = ""
+
+# ── AI agent ───────────────────────────────────────────────────────────────
+[agent]
+provider = "claude"                    # "claude" or "cursor"
+step_timeout_secs = 1800
+model = ""                             # ← e.g. "claude-sonnet-4-6" or leave empty for default
+
+# ── Jira (only needed if ticketing_system = "jira") ────────────────────────
+[jira]
+project_keys = []
+item_types = ["Task", "Bug"]
+done_status = "Done"
+site = ""
+email = ""
+
+# ── Docker ─────────────────────────────────────────────────────────────────
+[docker]
+build_commands = []
+compose_up_commands = []
+
+# ── Editor ─────────────────────────────────────────────────────────────────
+[editor]
+# ports = [3000, 5173, 6006]           # Uncomment to pre-map known ports
+dynamic_ports = 10
+# theme = "One Dark Pro"
+# extensions = [
+#   "esbenp.prettier-vscode",
+#   "dbaeumer.vscode-eslint",
+#   "bradlc.vscode-tailwindcss",
+# ]
+
+# ── Terminal ───────────────────────────────────────────────────────────────
+[terminal]
+# git_editor = "nano"
+# setup_commands = []
+# startup_commands = []
+
+# ── Network ────────────────────────────────────────────────────────────────
+[network]
+extra_egress_hosts = []
+# allow_all_https = false

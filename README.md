@@ -253,6 +253,9 @@ This repository includes ready-to-use example configurations:
 | [`examples/config.toml`](examples/config.toml) | Full annotated configuration |
 | [`examples/maestro.env`](examples/maestro.env) | Environment variables template |
 | [`examples/docker-compose.yml`](examples/docker-compose.yml) | Docker Compose with DinD workflow isolation |
+| [`examples/presets/react-vite/`](examples/presets/react-vite/) | React + Vite preset (dev server, Storybook, preview build) |
+| [`examples/presets/rust/`](examples/presets/rust/) | Rust preset (cargo run, cargo watch tests) |
+| [`examples/presets/ruby-rails/`](examples/presets/ruby-rails/) | Ruby on Rails preset (Rails server, console, Sidekiq) |
 | [`examples/workflows/ticket.toml`](examples/workflows/ticket.toml) | Main ticket pipeline (implement → review → test → PR) |
 | [`examples/workflows/review.toml`](examples/workflows/review.toml) | PR review comment handler |
 | [`examples/workflows/merge_base.toml`](examples/workflows/merge_base.toml) | Base branch merge workflow |
