@@ -109,43 +109,30 @@ docker compose run --rm -it --network=host maestro setup
 
 **Podman:**
 ```bash
-# podman-compose supports the same command
-podman compose run --rm -it --network=host maestro setup
+touch maestro.env    # create if missing (optional, for API tokens)
+P=$(basename "$(pwd)")
+
+podman run --rm -it \
+  --network=host \
+  --security-opt=label=disable \
+  -v "$(pwd)/config.toml":/etc/maestro/config.toml:ro \
+  -v "$(pwd)/workflows":/etc/maestro/workflows:ro \
+  -v "$(pwd)/maestro.env":/etc/maestro/env:ro \
+  -v "${P}_claude-auth":/home/maestro/.claude \
+  -v "${P}_cursor-auth":/home/maestro/.cursor \
+  -v "${P}_gh-auth":/home/maestro/.config/gh \
+  -v "${P}_workspace":/workspace \
+  -v "${P}_npm-cache":/home/maestro/.npm \
+  -v "${P}_mise-data":/home/maestro/.local/share/mise \
+  -v "${P}_mise-cache":/home/maestro/.cache/mise \
+  -e MAESTRO_CONFIG=/etc/maestro/config.toml \
+  -e MAESTRO_HOME=/home/maestro \
+  -e NODE_OPTIONS=--dns-result-order=ipv4first \
+  ghcr.io/morphet81/maestro-releases:latest setup
 ```
 
-> **Podman troubleshooting:** If `podman compose run` fails with argument errors
-> (some versions of `podman-compose` don't support all flags), use the raw fallback:
->
-> <details>
-> <summary>Raw podman run command</summary>
->
-> ```bash
-> touch maestro.env    # create if missing (optional, for API tokens)
-> P=$(basename "$(pwd)")
->
-> podman run --rm -it \
->   --network=host \
->   --security-opt=label=disable \
->   -v "$(pwd)/config.toml":/etc/maestro/config.toml:ro \
->   -v "$(pwd)/workflows":/etc/maestro/workflows:ro \
->   -v "$(pwd)/maestro.env":/etc/maestro/env:ro \
->   -v "${P}_claude-auth":/home/maestro/.claude \
->   -v "${P}_cursor-auth":/home/maestro/.cursor \
->   -v "${P}_gh-auth":/home/maestro/.config/gh \
->   -v "${P}_workspace":/workspace \
->   -v "${P}_npm-cache":/home/maestro/.npm \
->   -v "${P}_mise-data":/home/maestro/.local/share/mise \
->   -v "${P}_mise-cache":/home/maestro/.cache/mise \
->   -e MAESTRO_CONFIG=/etc/maestro/config.toml \
->   -e MAESTRO_HOME=/home/maestro \
->   -e NODE_OPTIONS=--dns-result-order=ipv4first \
->   ghcr.io/morphet81/maestro-releases:latest setup
-> ```
->
-> The `P=...` variable prefixes volume names with your directory name so each project
-> is isolated — matching what Docker Compose does automatically.
->
-> </details>
+The `P=...` variable prefixes volume names with your directory name so each project
+is isolated — matching what Docker Compose does automatically.
 
 This walks you through authenticating:
 1. **GitHub CLI** (`gh`) — required for creating PRs
