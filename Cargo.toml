@@ -1,0 +1,16 @@
+[package]
+name = "maestro"
+version = "0.1.0"
+edition = "2021"
+description = "Interactive CLI for managing Maestro orchestration containers"
+
+[workspace]
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+dialoguer = { version = "0.11" }
+console = "0.15"
+toml = "0.8"
+serde = { version = "1", features = ["derive"] }
+anyhow = "1"
+which = "7"

@@ -1,0 +1,5 @@
+/target
+/config.toml
+/maestro.env
+/workflows/
+/docker-compose.yml
