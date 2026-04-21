@@ -221,7 +221,7 @@ pub fn run() -> Result<()> {
             Some(
                 ports_str
                     .split(',')
-                    .filter_map(|s| s.trim().parse().ok())
+                    .filter_map(|s| s.trim().parse::<u16>().ok())
                     .collect(),
             )
         };
