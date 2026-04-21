@@ -104,7 +104,11 @@ docker compose run --rm -it --network=host maestro setup
 
 **Podman users** (`podman-compose` doesn't support `-it` as combined flags):
 ```bash
+# Create maestro.env if it doesn't exist (optional, for API tokens)
+touch maestro.env
+
 podman run --rm -it \
+  --platform linux/amd64 \
   --network=host \
   --security-opt=label=disable \
   -v "$(pwd)/config.toml":/etc/maestro/config.toml:ro \
