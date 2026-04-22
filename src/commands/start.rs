@@ -18,7 +18,25 @@ pub fn run(rt: &Runtime) -> Result<()> {
         ))?;
 
     println!(
-        "\n  {} Starting Maestro services...\n",
+        "\n  {} Pulling latest images...\n",
+        style("→").cyan().bold()
+    );
+
+    let pull_status = Command::new(&compose[0])
+        .args(&compose[1..])
+        .args(["pull"])
+        .status()
+        .context("Failed to pull images")?;
+
+    if !pull_status.success() {
+        println!(
+            "  {} Could not pull latest images, using cached versions.\n",
+            style("⚠").yellow().bold()
+        );
+    }
+
+    println!(
+        "  {} Starting Maestro services...\n",
         style("→").cyan().bold()
     );
 
