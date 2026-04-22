@@ -39,7 +39,7 @@ pub fn run(rt: &Runtime) -> Result<()> {
 
     let cwd = std::env::current_dir().context("Failed to get current directory")?;
     let compose_file = crate::find_compose_file(&cwd)
-        .ok_or_else(|| anyhow::anyhow!("No maestro.yml or docker-compose.yml found."))?;
+        .ok_or_else(|| anyhow::anyhow!("No maestro.yml found. Run `maestro setup` first."))?;
 
     let status = match rt {
         Runtime::Docker { compose } => {

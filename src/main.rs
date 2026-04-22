@@ -78,15 +78,11 @@ pub fn maestro_dir() -> PathBuf {
         .join(MAESTRO_DIR)
 }
 
-/// Find the compose file: `maestro.yml` takes priority over `docker-compose.yml`.
+/// Find the Maestro compose file (`maestro.yml`).
 pub fn find_compose_file(cwd: &Path) -> Option<PathBuf> {
     let maestro_yml = cwd.join("maestro.yml");
     if maestro_yml.exists() {
         return Some(maestro_yml);
-    }
-    let docker_compose = cwd.join("docker-compose.yml");
-    if docker_compose.exists() {
-        return Some(docker_compose);
     }
     None
 }
@@ -98,8 +94,10 @@ fn preflight_check() -> Result<()> {
     if !mdir.join("config.toml").exists() {
         anyhow::bail!(".maestro/config.toml not found. Run `maestro setup` first.");
     }
-    if find_compose_file(&cwd).is_none() {
-        anyhow::bail!("No maestro.yml or docker-compose.yml found. Run `maestro setup` first.");
+    // Create maestro.yml if missing
+    let compose_path = cwd.join("maestro.yml");
+    if !compose_path.exists() {
+        std::fs::write(&compose_path, templates::DOCKER_COMPOSE)?;
     }
 
     // Create maestro.env if missing (non-fatal)
