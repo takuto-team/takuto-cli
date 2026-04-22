@@ -100,17 +100,40 @@ pub fn detect() -> Result<Runtime> {
 
 /// Check if a binary named "docker" is real Docker (not podman aliased).
 fn is_real_docker(bin: &str) -> bool {
+    // 1. Check --version output for "podman"
     let output = Command::new(bin).arg("--version").output();
     match output {
         Ok(out) => {
             let stdout = String::from_utf8_lossy(&out.stdout).to_lowercase();
             let stderr = String::from_utf8_lossy(&out.stderr).to_lowercase();
             let combined = format!("{stdout} {stderr}");
-            // podman's version output typically contains "podman"
-            !combined.contains("podman")
+            if combined.contains("podman") {
+                return false;
+            }
         }
-        Err(_) => false,
+        Err(_) => return false,
     }
+
+    // 2. Check if the binary resolves to a path containing "podman"
+    //    (catches symlinks like /usr/local/bin/docker -> podman)
+    if let Ok(path) = which::which(bin) {
+        if let Ok(resolved) = path.canonicalize() {
+            if resolved.to_string_lossy().to_lowercase().contains("podman") {
+                return false;
+            }
+        }
+    }
+
+    // 3. Check `docker info` — podman's output mentions "podman" even when
+    //    the binary is wrapped as "docker"
+    if let Ok(out) = Command::new(bin).arg("info").output() {
+        let stdout = String::from_utf8_lossy(&out.stdout).to_lowercase();
+        if stdout.contains("podman") {
+            return false;
+        }
+    }
+
+    true
 }
 
 /// Check if a binary named "podman" is real Podman (not docker aliased).
