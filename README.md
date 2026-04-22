@@ -65,11 +65,6 @@ Pull the Maestro container image:
 docker pull ghcr.io/morphet81/maestro:latest
 ```
 
-> **Apple Silicon (M1/M2/M3):** The image is built for `linux/amd64`. Docker Desktop runs it via Rosetta emulation — pull with the explicit platform flag:
-> ```bash
-> docker pull --platform linux/amd64 ghcr.io/morphet81/maestro:latest
-> ```
-
 > **Private registry authentication:** If the image is private, authenticate first:
 > ```bash
 > gh auth refresh -h github.com -s read:packages
