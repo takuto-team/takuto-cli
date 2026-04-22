@@ -22,7 +22,6 @@ services:
   maestro:
     container_name: maestro
     image: ghcr.io/morphet81/maestro:latest
-    platform: linux/amd64    # Required for Apple Silicon (M1/M2/M3)
     ports:
       - "8080:8080"
     cap_add:
