@@ -8,8 +8,8 @@ use crate::MAESTRO_DIR;
 const IMAGE: &str = "ghcr.io/morphet81/maestro:latest";
 
 /// Normalize a directory name into a Compose project name.
-/// Docker/Podman Compose lowercase the directory name and strip everything
-/// that isn't `[a-z0-9_]`.  We replicate that so raw `podman run` volumes
+/// Docker/Podman Compose lowercase the directory name and keep only
+/// `[a-z0-9-_]`.  We replicate that so raw `podman run` volumes
 /// match the names Compose would create.
 fn compose_project_name() -> Result<String> {
     let cwd = std::env::current_dir().context("Failed to get current directory")?;
@@ -21,7 +21,7 @@ fn compose_project_name() -> Result<String> {
     let normalized: String = dir
         .to_lowercase()
         .chars()
-        .filter(|c| c.is_ascii_alphanumeric() || *c == '_')
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_')
         .collect();
 
     Ok(if normalized.is_empty() {

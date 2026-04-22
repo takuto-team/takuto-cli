@@ -20,6 +20,7 @@ pub const DOCKER_COMPOSE: &str = r#"# Maestro — Docker Compose with workflow i
 services:
   # ── Maestro application ──────────────────────────────────────────────────────
   maestro:
+    container_name: maestro
     image: ghcr.io/morphet81/maestro:latest
     platform: linux/amd64    # Required for Apple Silicon (M1/M2/M3)
     ports:
@@ -68,6 +69,7 @@ services:
 
   # ── Docker-in-Docker sidecar (workflow isolation) ────────────────────────────
   dind:
+    container_name: maestro-dind
     image: docker:27-dind
     privileged: true
     ports:
