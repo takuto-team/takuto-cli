@@ -8,7 +8,15 @@ Maestro polls your ticketing system (Jira, GitHub Issues, or manual input) for w
 
 ### 1. Install the CLI
 
-Download the latest `maestro` binary for your platform from [Releases](https://github.com/morphet81/maestro/releases/latest).
+**Homebrew (macOS / Linux — recommended):**
+```bash
+brew install morphet81/tools/maestro
+```
+
+<details>
+<summary>Manual install</summary>
+
+Download the latest binary for your platform from [Releases](https://github.com/morphet81/maestro/releases/latest).
 
 **macOS (Apple Silicon):**
 ```bash
@@ -41,6 +49,8 @@ sudo mv maestro /usr/local/bin/
 **Windows:**
 
 Download [`maestro-windows-amd64.exe`](https://github.com/morphet81/maestro/releases/latest/download/maestro-windows-amd64.exe) and add it to your `PATH`.
+
+</details>
 
 ### 2. Prerequisites
 
