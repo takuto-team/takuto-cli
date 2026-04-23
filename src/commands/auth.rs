@@ -65,7 +65,7 @@ pub fn run(rt: &Runtime, local: bool) -> Result<()> {
                 }
             };
             if local {
-                cmd.env("MAESTRO_IMAGE", rt.image(local));
+                cmd.env("MAESTRO_IMAGE", rt.image());
             }
             cmd.status().context("Failed to run docker compose")?
         }
@@ -76,6 +76,9 @@ pub fn run(rt: &Runtime, local: bool) -> Result<()> {
 
             let mut cmd = Command::new("podman");
             cmd.args(["run", "--rm", "-it"]);
+            if local {
+                cmd.args(["--pull=never"]);
+            }
             cmd.args(["--security-opt=label=disable"]);
 
             // Config mounts from .maestro/ (read-only)
@@ -116,7 +119,7 @@ pub fn run(rt: &Runtime, local: bool) -> Result<()> {
             cmd.args(["-e", "NODE_OPTIONS=--dns-result-order=ipv4first"]);
 
             // Image + command
-            cmd.args([rt.image(local), "setup"]);
+            cmd.args([rt.image(), "setup"]);
 
             cmd.status().context("Failed to run podman")?
         }

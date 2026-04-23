@@ -64,20 +64,10 @@ impl Runtime {
 
     /// Returns the image reference to use.
     ///
-    /// With `local = true`:
-    /// - Docker: `maestro:latest`  (unqualified local image)
-    /// - Podman: `localhost/maestro:latest`  (Podman's local-image namespace)
-    ///
-    /// With `local = false` (default): the published GHCR image.
-    pub fn image(&self, local: bool) -> &'static str {
-        if local {
-            match self {
-                Runtime::Docker { .. } => "maestro:latest",
-                Runtime::Podman { .. } => "localhost/maestro:latest",
-            }
-        } else {
-            "ghcr.io/morphet81/maestro:latest"
-        }
+    /// Always the published GHCR image — the `--local` flag controls
+    /// *pull behaviour* (never pull), not the image name.
+    pub fn image(&self) -> &'static str {
+        "ghcr.io/morphet81/maestro:latest"
     }
 }
 

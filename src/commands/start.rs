@@ -21,7 +21,7 @@ pub fn run(rt: &Runtime, local: bool) -> Result<()> {
         println!(
             "\n  {} Using local image ({})...\n",
             style("→").cyan().bold(),
-            rt.image(true),
+            rt.image(),
         );
     } else {
         println!(
@@ -52,7 +52,7 @@ pub fn run(rt: &Runtime, local: bool) -> Result<()> {
     up_cmd.args(&compose[1..]).args(["up", "-d"]);
     if local {
         up_cmd.args(["--pull=never"]);
-        up_cmd.env("MAESTRO_IMAGE", rt.image(true));
+        up_cmd.env("MAESTRO_IMAGE", rt.image());
     }
     let status = up_cmd
         .status()
