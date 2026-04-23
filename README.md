@@ -316,7 +316,7 @@ my-project/
 
 **Docker:**
 ```bash
-docker compose -f maestro.yml run --rm -it --network=host maestro setup
+docker compose -f maestro.yml run --rm -it maestro setup
 ```
 
 **Podman:**
@@ -325,7 +325,6 @@ touch .maestro/maestro.env    # create if missing (optional, for API tokens)
 P=$(basename "$(pwd)")
 
 podman run --rm -it \
-  --network=host \
   --security-opt=label=disable \
   -v "$(pwd)/.maestro/config.toml":/etc/maestro/config.toml:ro \
   -v "$(pwd)/.maestro/workflows":/etc/maestro/workflows:ro \

@@ -47,12 +47,14 @@ pub fn run(rt: &Runtime) -> Result<()> {
             let mut cmd = match compose {
                 crate::runtime::ComposeVariant::Plugin => {
                     let mut c = Command::new("docker");
-                    c.args(["compose", "-f", &file_arg, "run", "--rm", "-it", "--network=host", "maestro", "setup"]);
+                    c.args([
+                        "compose", "-f", &file_arg, "run", "--rm", "-it", "maestro", "setup",
+                    ]);
                     c
                 }
                 crate::runtime::ComposeVariant::Standalone => {
                     let mut c = Command::new("docker-compose");
-                    c.args(["-f", &file_arg, "run", "--rm", "-it", "--network=host", "maestro", "setup"]);
+                    c.args(["-f", &file_arg, "run", "--rm", "-it", "maestro", "setup"]);
                     c
                 }
             };
@@ -65,13 +67,27 @@ pub fn run(rt: &Runtime) -> Result<()> {
 
             let mut cmd = Command::new("podman");
             cmd.args(["run", "--rm", "-it"]);
-            cmd.args(["--network=host"]);
             cmd.args(["--security-opt=label=disable"]);
 
             // Config mounts from .maestro/ (read-only)
-            cmd.args(["-v", &format!("{}:/etc/maestro/config.toml:ro", mdir.join("config.toml").display())]);
-            cmd.args(["-v", &format!("{}:/etc/maestro/workflows:ro", mdir.join("workflows").display())]);
-            cmd.args(["-v", &format!("{}:/etc/maestro/env:ro", mdir.join("maestro.env").display())]);
+            cmd.args([
+                "-v",
+                &format!(
+                    "{}:/etc/maestro/config.toml:ro",
+                    mdir.join("config.toml").display()
+                ),
+            ]);
+            cmd.args([
+                "-v",
+                &format!(
+                    "{}:/etc/maestro/workflows:ro",
+                    mdir.join("workflows").display()
+                ),
+            ]);
+            cmd.args([
+                "-v",
+                &format!("{}:/etc/maestro/env:ro", mdir.join("maestro.env").display()),
+            ]);
 
             // Named volumes (project-isolated, matching Compose naming)
             cmd.args(["-v", &format!("{p}_claude-auth:/home/maestro/.claude")]);
@@ -79,7 +95,10 @@ pub fn run(rt: &Runtime) -> Result<()> {
             cmd.args(["-v", &format!("{p}_gh-auth:/home/maestro/.config/gh")]);
             cmd.args(["-v", &format!("{p}_workspace:/workspace")]);
             cmd.args(["-v", &format!("{p}_npm-cache:/home/maestro/.npm")]);
-            cmd.args(["-v", &format!("{p}_mise-data:/home/maestro/.local/share/mise")]);
+            cmd.args([
+                "-v",
+                &format!("{p}_mise-data:/home/maestro/.local/share/mise"),
+            ]);
             cmd.args(["-v", &format!("{p}_mise-cache:/home/maestro/.cache/mise")]);
 
             // Environment

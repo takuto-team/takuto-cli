@@ -1,5 +1,7 @@
-pub const WORKFLOW_TICKET: &str = include_str!("../examples/react-vite/.maestro/workflows/ticket.toml");
-pub const WORKFLOW_REVIEW: &str = include_str!("../examples/react-vite/.maestro/workflows/review.toml");
+pub const WORKFLOW_TICKET: &str =
+    include_str!("../examples/react-vite/.maestro/workflows/ticket.toml");
+pub const WORKFLOW_REVIEW: &str =
+    include_str!("../examples/react-vite/.maestro/workflows/review.toml");
 pub const WORKFLOW_MERGE_BASE: &str =
     include_str!("../examples/react-vite/.maestro/workflows/merge_base.toml");
 pub const MAESTRO_ENV: &str = include_str!("../examples/react-vite/.maestro/maestro.env");
@@ -15,7 +17,7 @@ pub const DOCKER_COMPOSE: &str = r#"# Maestro — Docker Compose with workflow i
 #
 # Or manually:
 #   docker compose -f maestro.yml up -d
-#   docker compose -f maestro.yml run --rm -it --network=host maestro setup
+#   docker compose -f maestro.yml run --rm -it maestro setup
 
 services:
   # ── Maestro application ──────────────────────────────────────────────────────
