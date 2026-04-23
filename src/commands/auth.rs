@@ -45,14 +45,22 @@ pub fn run(rt: &Runtime, local: bool) -> Result<()> {
             let mut cmd = match compose {
                 crate::runtime::ComposeVariant::Plugin => {
                     let mut c = Command::new("docker");
-                    c.args([
-                        "compose", "-f", &file_arg, "run", "--rm", "-it", "maestro", "setup",
-                    ]);
+                    let mut args = vec!["compose", "-f", &file_arg, "run", "--rm", "-it"];
+                    if local {
+                        args.push("--pull=never");
+                    }
+                    args.extend(["maestro", "setup"]);
+                    c.args(&args);
                     c
                 }
                 crate::runtime::ComposeVariant::Standalone => {
                     let mut c = Command::new("docker-compose");
-                    c.args(["-f", &file_arg, "run", "--rm", "-it", "maestro", "setup"]);
+                    let mut args = vec!["-f", &file_arg, "run", "--rm", "-it"];
+                    if local {
+                        args.push("--pull=never");
+                    }
+                    args.extend(["maestro", "setup"]);
+                    c.args(&args);
                     c
                 }
             };

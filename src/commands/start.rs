@@ -51,6 +51,7 @@ pub fn run(rt: &Runtime, local: bool) -> Result<()> {
     let mut up_cmd = Command::new(&compose[0]);
     up_cmd.args(&compose[1..]).args(["up", "-d"]);
     if local {
+        up_cmd.args(["--pull=never"]);
         up_cmd.env("MAESTRO_IMAGE", rt.image(true));
     }
     let status = up_cmd
