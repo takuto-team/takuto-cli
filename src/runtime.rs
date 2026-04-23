@@ -2,6 +2,16 @@ use anyhow::{bail, Result};
 use console::style;
 use std::process::Command;
 
+/// Caller preference for which container runtime to use.
+pub enum RuntimePreference {
+    /// Auto-detect (current behaviour).
+    Auto,
+    /// Force Docker; error if not available.
+    Docker,
+    /// Force Podman; error if not available.
+    Podman,
+}
+
 #[derive(Debug)]
 pub enum ComposeVariant {
     Plugin,
@@ -51,43 +61,55 @@ impl Runtime {
     pub fn is_podman(&self) -> bool {
         matches!(self, Runtime::Podman { .. })
     }
+
+    /// Returns the image reference to use.
+    ///
+    /// With `local = true`:
+    /// - Docker: `maestro:latest`  (unqualified local image)
+    /// - Podman: `localhost/maestro:latest`  (Podman's local-image namespace)
+    ///
+    /// With `local = false` (default): the published GHCR image.
+    pub fn image(&self, local: bool) -> &'static str {
+        if local {
+            match self {
+                Runtime::Docker { .. } => "maestro:latest",
+                Runtime::Podman { .. } => "localhost/maestro:latest",
+            }
+        } else {
+            "ghcr.io/morphet81/maestro:latest"
+        }
+    }
 }
 
 /// Detect the container runtime (Docker or Podman) and compose availability.
-pub fn detect() -> Result<Runtime> {
-    // Check docker
+///
+/// Pass a `RuntimePreference` to force a specific runtime or use auto-detection.
+pub fn detect(pref: RuntimePreference) -> Result<Runtime> {
+    match pref {
+        RuntimePreference::Auto => detect_auto(),
+        RuntimePreference::Docker => detect_forced_docker(),
+        RuntimePreference::Podman => detect_forced_podman(),
+    }
+}
+
+fn detect_auto() -> Result<Runtime> {
     let docker_available = which::which("docker").is_ok();
     let podman_available = which::which("podman").is_ok();
 
-    let docker_is_real = if docker_available {
-        is_real_docker("docker")
-    } else {
-        false
-    };
-
-    let podman_is_real = if podman_available {
-        is_real_podman("podman")
-    } else {
-        false
-    };
-
-    // docker binary exists but is actually podman (alias)
+    let docker_is_real = docker_available && is_real_docker("docker");
+    let podman_is_real = podman_available && is_real_podman("podman");
     let docker_is_podman_alias = docker_available && !docker_is_real;
 
-    // Determine effective runtime
     if docker_is_real {
-        // Real Docker — check compose
         let compose = detect_docker_compose()?;
         return Ok(Runtime::Docker { compose });
     }
 
     if podman_is_real || docker_is_podman_alias {
-        // Podman (either native or aliased as docker)
         let has_compose = check_podman_compose();
         return Ok(Runtime::Podman { has_compose });
     }
 
-    // Nothing found
     bail!(
         "No container runtime found.\n\n\
          Install one of the following:\n\
@@ -95,6 +117,40 @@ pub fn detect() -> Result<Runtime> {
          {} Podman:         https://podman.io/getting-started/installation",
         style("•").cyan(),
         style("•").cyan(),
+    );
+}
+
+fn detect_forced_docker() -> Result<Runtime> {
+    if which::which("docker").is_err() {
+        bail!(
+            "Docker not found.\n\
+             Install Docker Desktop: https://docs.docker.com/get-docker/"
+        );
+    }
+    if !is_real_docker("docker") {
+        bail!(
+            "The `docker` binary appears to be a Podman alias.\n\
+             Install real Docker or use --podman instead."
+        );
+    }
+    let compose = detect_docker_compose()?;
+    Ok(Runtime::Docker { compose })
+}
+
+fn detect_forced_podman() -> Result<Runtime> {
+    // Native podman binary
+    if which::which("podman").is_ok() && is_real_podman("podman") {
+        let has_compose = check_podman_compose();
+        return Ok(Runtime::Podman { has_compose });
+    }
+    // docker binary that is actually a podman alias
+    if which::which("docker").is_ok() && !is_real_docker("docker") {
+        let has_compose = check_podman_compose();
+        return Ok(Runtime::Podman { has_compose });
+    }
+    bail!(
+        "Podman not found.\n\
+         Install Podman: https://podman.io/getting-started/installation"
     );
 }
 

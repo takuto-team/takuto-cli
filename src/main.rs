@@ -11,6 +11,18 @@ use std::path::{Path, PathBuf};
 #[derive(Parser)]
 #[command(name = "maestro", about = "Manage Maestro orchestration containers")]
 struct Cli {
+    /// Force Docker runtime (skip Podman detection)
+    #[arg(long, global = true, conflicts_with = "podman")]
+    docker: bool,
+
+    /// Force Podman runtime (skip Docker detection)
+    #[arg(long, global = true, conflicts_with = "docker")]
+    podman: bool,
+
+    /// Use locally built image instead of pulling from the registry
+    #[arg(long, global = true)]
+    local: bool,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -43,28 +55,36 @@ fn main() {
 fn run() -> Result<()> {
     let cli = Cli::parse();
 
+    let pref = if cli.docker {
+        runtime::RuntimePreference::Docker
+    } else if cli.podman {
+        runtime::RuntimePreference::Podman
+    } else {
+        runtime::RuntimePreference::Auto
+    };
+
     match cli.command {
         Commands::Setup => commands::setup::run()?,
         Commands::Auth => {
             preflight_check()?;
-            let rt = runtime::detect()?;
-            commands::auth::run(&rt)?;
+            let rt = runtime::detect(pref)?;
+            commands::auth::run(&rt, cli.local)?;
         }
         Commands::Start => {
             preflight_check()?;
-            let rt = runtime::detect()?;
-            commands::start::run(&rt)?;
+            let rt = runtime::detect(pref)?;
+            commands::start::run(&rt, cli.local)?;
         }
         Commands::Stop => {
             preflight_check()?;
-            let rt = runtime::detect()?;
+            let rt = runtime::detect(pref)?;
             commands::stop::run(&rt)?;
         }
         Commands::Restart => {
             preflight_check()?;
-            let rt = runtime::detect()?;
+            let rt = runtime::detect(pref)?;
             commands::stop::run(&rt)?;
-            commands::start::run(&rt)?;
+            commands::start::run(&rt, cli.local)?;
         }
     }
 

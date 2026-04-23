@@ -4,7 +4,7 @@ use std::process::Command;
 
 use crate::runtime::Runtime;
 
-pub fn run(rt: &Runtime) -> Result<()> {
+pub fn run(rt: &Runtime, local: bool) -> Result<()> {
     let cwd = std::env::current_dir()?;
     let compose_file = crate::find_compose_file(&cwd)
         .ok_or_else(|| anyhow::anyhow!("No maestro.yml found. Run `maestro setup` first."))?;
@@ -17,22 +17,30 @@ pub fn run(rt: &Runtime) -> Result<()> {
              Or use Docker instead: https://docs.docker.com/get-docker/"
         ))?;
 
-    println!(
-        "\n  {} Pulling latest images...\n",
-        style("→").cyan().bold()
-    );
-
-    let pull_status = Command::new(&compose[0])
-        .args(&compose[1..])
-        .args(["pull"])
-        .status()
-        .context("Failed to pull images")?;
-
-    if !pull_status.success() {
+    if local {
         println!(
-            "  {} Could not pull latest images, using cached versions.\n",
-            style("⚠").yellow().bold()
+            "\n  {} Using local image ({})...\n",
+            style("→").cyan().bold(),
+            rt.image(true),
         );
+    } else {
+        println!(
+            "\n  {} Pulling latest images...\n",
+            style("→").cyan().bold()
+        );
+
+        let pull_status = Command::new(&compose[0])
+            .args(&compose[1..])
+            .args(["pull"])
+            .status()
+            .context("Failed to pull images")?;
+
+        if !pull_status.success() {
+            println!(
+                "  {} Could not pull latest images, using cached versions.\n",
+                style("⚠").yellow().bold()
+            );
+        }
     }
 
     println!(
@@ -40,9 +48,12 @@ pub fn run(rt: &Runtime) -> Result<()> {
         style("→").cyan().bold()
     );
 
-    let status = Command::new(&compose[0])
-        .args(&compose[1..])
-        .args(["up", "-d"])
+    let mut up_cmd = Command::new(&compose[0]);
+    up_cmd.args(&compose[1..]).args(["up", "-d"]);
+    if local {
+        up_cmd.env("MAESTRO_IMAGE", rt.image(true));
+    }
+    let status = up_cmd
         .status()
         .context("Failed to start services")?;
 

@@ -5,8 +5,6 @@ use std::process::Command;
 use crate::runtime::Runtime;
 use crate::MAESTRO_DIR;
 
-const IMAGE: &str = "ghcr.io/morphet81/maestro:latest";
-
 /// Normalize a directory name into a Compose project name.
 /// Docker/Podman Compose lowercase the directory name and keep only
 /// `[a-z0-9-_]`.  We replicate that so raw `podman run` volumes
@@ -31,7 +29,7 @@ fn compose_project_name() -> Result<String> {
     })
 }
 
-pub fn run(rt: &Runtime) -> Result<()> {
+pub fn run(rt: &Runtime, local: bool) -> Result<()> {
     println!(
         "\n  {} Running authentication flow...\n",
         style("→").cyan().bold()
@@ -58,6 +56,9 @@ pub fn run(rt: &Runtime) -> Result<()> {
                     c
                 }
             };
+            if local {
+                cmd.env("MAESTRO_IMAGE", rt.image(local));
+            }
             cmd.status().context("Failed to run docker compose")?
         }
         Runtime::Podman { .. } => {
@@ -107,7 +108,7 @@ pub fn run(rt: &Runtime) -> Result<()> {
             cmd.args(["-e", "NODE_OPTIONS=--dns-result-order=ipv4first"]);
 
             // Image + command
-            cmd.args([IMAGE, "setup"]);
+            cmd.args([rt.image(local), "setup"]);
 
             cmd.status().context("Failed to run podman")?
         }

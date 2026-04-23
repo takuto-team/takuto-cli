@@ -23,7 +23,7 @@ services:
   # ── Maestro application ──────────────────────────────────────────────────────
   maestro:
     container_name: maestro
-    image: ghcr.io/morphet81/maestro:latest
+    image: ${MAESTRO_IMAGE:-ghcr.io/morphet81/maestro:latest}
     ports:
       - "8080:8080"
     cap_add:
