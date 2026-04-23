@@ -57,6 +57,8 @@ pub struct RunCommand {
 pub struct General {
     #[serde(default = "default_ticketing_system")]
     pub ticketing_system: String,
+    #[serde(default = "default_auto_polling")]
+    pub auto_polling: bool,
     #[serde(default = "default_60")]
     pub poll_interval_secs: u64,
     #[serde(default = "default_60")]
@@ -79,6 +81,7 @@ impl Default for General {
     fn default() -> Self {
         Self {
             ticketing_system: default_ticketing_system(),
+            auto_polling: true,
             poll_interval_secs: 60,
             pr_merge_poll_interval_secs: 60,
             max_concurrent_workflows: 1,
@@ -278,6 +281,7 @@ pub struct GitHubApp {
 
 // Default value helpers
 fn default_ticketing_system() -> String { "none".to_string() }
+fn default_auto_polling() -> bool { true }
 fn default_60() -> u64 { 60 }
 fn default_1_u32() -> u32 { 1 }
 fn default_log_level() -> String { "info".to_string() }

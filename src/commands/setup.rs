@@ -78,6 +78,11 @@ pub fn run() -> Result<()> {
         .default(config.general.poll_interval_secs)
         .interact_text()?;
 
+    config.general.auto_polling = Confirm::new()
+        .with_prompt("Enable auto polling on startup?")
+        .default(config.general.auto_polling)
+        .interact()?;
+
     config.general.max_concurrent_workflows = Input::new()
         .with_prompt("Max concurrent workflows")
         .default(config.general.max_concurrent_workflows)
