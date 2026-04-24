@@ -4,6 +4,16 @@
 
 Maestro polls your ticketing system (Jira, GitHub Issues, or manual input) for work, then runs a configurable pipeline for each ticket: create a branch, install dependencies, run AI agent steps (Claude Code or Cursor Agent), review, test, and open a PR — all in isolated Docker containers with a real-time web dashboard.
 
+## Why Maestro
+
+- **Fully customizable workflows** — Define your own pipeline steps in YAML: which agents run, in what order, with what prompts. Every project can have a different workflow tailored to its stack and conventions.
+- **Ticket-aware AI** — Maestro reads your Jira or GitHub tickets before running agents, and can enrich them: add acceptance criteria, clarify scope, and keep ticket descriptions in sync with what was actually implemented.
+- **Visual dashboard** — Monitor every job in real time from the web UI: see which step is running, read agent logs, inspect diffs, and intervene when needed — without touching the terminal.
+- **Bot identity for traceability** — Connect a dedicated GitHub bot account so every PR, commit, and review comment made by Maestro is clearly attributed to an automation identity, keeping your team's git history clean and auditable.
+- **Isolated containers for security** — Each job runs inside its own Docker or Podman container with scoped credentials. Your host environment and secrets are never exposed to the agent; containers are discarded after the job completes.
+- **Focus on what matters** — Describe business value and architecture in your tickets; let Maestro handle the implementation. Engineers stay in the problem space — requirements, design decisions, trade-offs — while AI handles the code.
+- **Mermaid diagrams with live preview** — Embed Mermaid diagrams directly in your tickets and workflow definitions. Preview them live from the dashboard so you can visualise architecture and flows without leaving Maestro.
+
 ## Quick Start
 
 ### 1. Install the CLI
