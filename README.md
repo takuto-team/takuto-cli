@@ -127,6 +127,50 @@ maestro restart    # restart Maestro services
 
 ---
 
+## Security
+
+> **⚠ Maestro runs AI agents autonomously and unattended.** Before going live, make sure the mitigations below are in place. A misconfigured setup can result in unreviewed code being pushed to protected branches or sensitive data being over-shared with the AI model.
+
+### Branch protection (required)
+
+Agents push branches and open PRs — they never commit directly to `main` or your release branches. Enforce this at the Git host level so it holds even if the agent misbehaves:
+
+- **GitHub:** enable branch protection rules on `main` (and any other long-lived branches): require at least one human approving review before merge, enable status checks, and disable direct pushes.
+- **GitLab:** use protected branches with "Maintainer" merge access and require approval rules.
+
+Without branch protection, a prompt-injection attack embedded in a ticket description could instruct the agent to force-push or merge without review.
+
+### Scoped GitHub token (recommended)
+
+Use a **fine-grained personal access token** (PAT) scoped to the target repository instead of a classic token or your personal `gh` session. Grant only what Maestro needs:
+
+| Permission    | Access       | Used for                                                                                         |
+|---------------|--------------|--------------------------------------------------------------------------------------------------|
+| Contents      | Read & write | `git push` (branch push before `gh pr create`)                                                   |
+| Pull requests | Read & write | `gh pr create`, `gh pr edit --add-reviewer`, PR merge polling                                    |
+| Metadata      | Read         | Required base permission for all fine-grained tokens                                             |
+| Issues        | Read & write | Only if `ticketing_system = "github"` — Maestro polls issues and patches descriptions            |
+
+To use a PAT, pick one of two approaches:
+
+- **During `maestro auth`:** when prompted by the `gh` interactive login, paste the token.
+- **Via `maestro.env`:** add `GH_TOKEN=<your-token>` — `gh` picks this up automatically, no interactive login needed.
+
+### Scoped Jira tokens (required when using Jira)
+
+Use a dedicated Jira service account or a scoped API token, not your personal admin credentials:
+
+- Grant only **Browse Projects**, **Create Issues** (for comment/transition), and **Assign Issues** on the target project(s).
+- Rotate the token if Maestro's container or its volumes are ever compromised.
+
+Using an admin token means a successful prompt-injection attack can read or modify any Jira project on your instance.
+
+### Prompt injection
+
+Ticket descriptions (Jira or GitHub Issues) are embedded in AI prompts. Treat them like user-supplied content: a malicious ticket could attempt to override agent instructions. Branch protection and scoped tokens are your main defence — they limit what a hijacked agent session can actually do.
+
+---
+
 ## Configuration Guide
 
 ### Ticketing System
