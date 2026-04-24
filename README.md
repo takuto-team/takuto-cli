@@ -131,6 +131,8 @@ maestro restart    # restart Maestro services
 
 > **⚠ Maestro runs AI agents autonomously and unattended.** Before going live, make sure the mitigations below are in place. A misconfigured setup can result in unreviewed code being pushed to protected branches or sensitive data being over-shared with the AI model.
 
+**Security model:** Maestro does not maintain an engine-level allowlist for `gh` or `acli` calls. Security is delegated entirely to the token permissions you configure — scope your tokens to the minimum required.
+
 ### Branch protection (required)
 
 Agents push branches and open PRs — they never commit directly to `main` or your release branches. Enforce this at the Git host level so it holds even if the agent misbehaves:
@@ -140,7 +142,7 @@ Agents push branches and open PRs — they never commit directly to `main` or yo
 
 Without branch protection, a prompt-injection attack embedded in a ticket description could instruct the agent to force-push or merge without review.
 
-### Scoped GitHub token (recommended)
+### Scoped GitHub token (required)
 
 Use a **fine-grained personal access token** (PAT) scoped to the target repository instead of a classic token or your personal `gh` session. Grant only what Maestro needs:
 
@@ -156,6 +158,8 @@ To use a PAT, pick one of two approaches:
 - **During `maestro auth`:** when prompted by the `gh` interactive login, paste the token.
 - **Via `maestro.env`:** add `GH_TOKEN=<your-token>` — `gh` picks this up automatically, no interactive login needed.
 
+Because there is no engine-level `gh` allowlist, the token scope is your only guardrail — a broad token means a hijacked agent session can perform any `gh` operation on any repo it has access to.
+
 ### Scoped Jira tokens (required when using Jira)
 
 Use a dedicated Jira service account or a scoped API token, not your personal admin credentials:
@@ -163,7 +167,7 @@ Use a dedicated Jira service account or a scoped API token, not your personal ad
 - Grant only **Browse Projects**, **Create Issues** (for comment/transition), and **Assign Issues** on the target project(s).
 - Rotate the token if Maestro's container or its volumes are ever compromised.
 
-Using an admin token means a successful prompt-injection attack can read or modify any Jira project on your instance.
+Because there is no engine-level `acli` allowlist, the token scope is your only guardrail — an admin token means a successful prompt-injection attack can read or modify any Jira project on your instance.
 
 ### Prompt injection
 
