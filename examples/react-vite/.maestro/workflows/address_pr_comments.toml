@@ -1,0 +1,30 @@
+name = "Address PR Comments"
+depends_on = ["implement_ticket"]
+
+[[steps]]
+name = "Fix review comments"
+prompt = """
+Follow instructions from the prompt.
+"""
+repeat = 1
+
+[[steps.skills]]
+name = "address-pr-comments"
+args = []
+
+[[steps]]
+name = "Lint and test"
+prompt = """
+Run your project's linting tool and fix all reported issues. Do not suppress warnings or add
+ignore directives unless a rule is genuinely inapplicable; if so, leave an inline comment
+explaining why. Re-run and confirm the linter exits clean with zero warnings before moving on.
+
+Run your project's test suite and ensure all tests pass. If any tests fail, fix the underlying
+code — do not delete or skip tests. Re-run until the full suite is green.
+
+Run your project's formatter (if applicable) and apply any required formatting changes.
+
+Once all checks pass cleanly, stage all changes and commit with a message of
+`chore: fix lint warnings, format, and failing tests`.
+"""
+repeat = 1

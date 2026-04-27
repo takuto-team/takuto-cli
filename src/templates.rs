@@ -1,9 +1,9 @@
-pub const WORKFLOW_TICKET: &str =
-    include_str!("../examples/react-vite/.maestro/workflows/ticket.toml");
-pub const WORKFLOW_REVIEW: &str =
-    include_str!("../examples/react-vite/.maestro/workflows/review.toml");
+pub const WORKFLOW_IMPLEMENT_TICKET: &str =
+    include_str!("../examples/react-vite/.maestro/workflows/implement_ticket.toml");
 pub const WORKFLOW_MERGE_BASE: &str =
     include_str!("../examples/react-vite/.maestro/workflows/merge_base.toml");
+pub const WORKFLOW_ADDRESS_PR_COMMENTS: &str =
+    include_str!("../examples/react-vite/.maestro/workflows/address_pr_comments.toml");
 pub const MAESTRO_ENV: &str = include_str!("../examples/react-vite/.maestro/maestro.env");
 
 /// Docker Compose template for the CLI.

@@ -368,12 +368,20 @@ pub fn run() -> Result<()> {
     if !workflows_dir.exists() {
         fs::create_dir_all(&workflows_dir)?;
     }
-    write_if_missing(&workflows_dir, "ticket.toml", templates::WORKFLOW_TICKET)?;
-    write_if_missing(&workflows_dir, "review.toml", templates::WORKFLOW_REVIEW)?;
+    write_if_missing(
+        &workflows_dir,
+        "implement_ticket.toml",
+        templates::WORKFLOW_IMPLEMENT_TICKET,
+    )?;
     write_if_missing(
         &workflows_dir,
         "merge_base.toml",
         templates::WORKFLOW_MERGE_BASE,
+    )?;
+    write_if_missing(
+        &workflows_dir,
+        "address_pr_comments.toml",
+        templates::WORKFLOW_ADDRESS_PR_COMMENTS,
     )?;
 
     println!(

@@ -1,0 +1,116 @@
+name = "Implement Ticket"
+
+[[steps]]
+name = "Implement ticket"
+prompt = """
+Follow instructions provided below:
+{description}
+
+BOUNDARIES: This step covers implementation only.
+- Do NOT commit any changes — a dedicated "Commit changes" step follows.
+- Do NOT create a PR — a dedicated "Create PR" step follows.
+These rules apply to you and to any sub-agents you spawn.
+
+SCOPE CONSTRAINT: Only implement what is explicitly described above. Do not fix, refactor, or improve
+anything else you encounter — even if it looks broken or suboptimal. If you find something unrelated
+that warrants attention, add a # TODO comment inline with a one-line explanation and move on.
+
+If ticket description lacks details, you may refer to the main branch which contains the current
+existing app; mechanisms implemented there may be reused in the app we are building (business logic).
+"""
+repeat = 1
+
+[[steps.skills]]
+name = "address-ticket"
+args = ["--no-jira", "--headless"]
+
+[[steps]]
+name = "Review Changes"
+prompt = """
+Ticket context:
+{ticket_context}
+
+Review all changes made on this branch relative to `{base_branch}` (i.e., `git diff {base_branch}...HEAD`).
+
+STRICT SCOPE RULE — READ CAREFULLY:
+- Only address issues in code that was changed as part of this ticket — lines and files visible in
+  `git diff {base_branch}...HEAD`.
+- Do NOT fix, refactor, deduplicate, or "improve" pre-existing code — even if you see bugs, duplication,
+  missing validation, or style issues outside the diff. These are out of scope.
+- Do NOT follow up on # TODO comments — they are intentional markers for future work, not action items
+  for this review.
+- If you find a genuine issue in unchanged code, mention it in your summary but do NOT touch it.
+
+For each finding in changed code: re-examine it in the context of the surrounding code and confirm it
+is a genuine issue, not a false positive or a stylistic preference.
+Address all confirmed findings in changed code. For anything you choose to skip, explicitly state what
+it is and why it does not warrant a change.
+
+When done, list what was fixed and what was intentionally left as-is.
+Do not create a PR.
+"""
+repeat = 2
+
+[[steps.skills]]
+name = "review-changes"
+args = ["--headless"]
+
+[[steps]]
+name = "Commit changes"
+prompt = """
+Review all uncommitted changes and organize them into logical, meaningful commits.
+
+SCOPE RULE: Only commit changes that are directly related to the ticket objective. If you find staged
+or unstaged changes that touch files or logic unrelated to the ticket, do NOT commit them — discard
+them with `git checkout -- <file>` and note what was discarded.
+
+For each commit: stage only the relevant files, write a concise conventional commit message
+(e.g. feat:, fix:, refactor:, chore:), and commit.
+Do not squash unrelated changes into a single commit.
+When done, print a summary of the commits made (and any changes that were discarded as out of scope).
+Do not create a PR.
+"""
+repeat = 1
+
+[[steps]]
+name = "Lint and test"
+prompt = """
+Run your project's linting tool and fix all reported issues. Do not suppress warnings or add
+ignore directives unless a rule is genuinely inapplicable; if so, leave an inline comment
+explaining why. Re-run and confirm the linter exits clean with zero warnings before moving on.
+
+Run your project's test suite and ensure all tests pass. If any tests fail, fix the underlying
+code — do not delete or skip tests. Re-run until the full suite is green.
+
+Run your project's formatter (if applicable) and apply any required formatting changes.
+
+SCOPE RULE: Only fix lint/test/format issues in files that were changed as part of this ticket
+(visible in `git diff {base_branch}...HEAD --name-only`). If a pre-existing lint warning or test
+failure exists in an untouched file, ignore it — it is not your responsibility.
+
+Once all checks pass cleanly, stage all changes and commit with a message of
+`chore: fix lint warnings, format, and failing tests`.
+
+Do not create a PR.
+"""
+repeat = 1
+
+[[steps]]
+name = "Create PR"
+prompt = """
+Ticket context:
+{ticket_context}
+
+Create a pull request targeting `{base_branch}`. Do NOT run tests, linting, or any other checks —
+a dedicated step has already handled that.
+
+Steps:
+1. Run `git log {base_branch}..HEAD --oneline` to review the commits on this branch.
+2. Create the PR using the `gh` CLI.
+   - Title must be a conventional commit message (e.g. `feat: add user profile page`).
+     Do not include the workflow name, branch name, or ticket key in the title.
+   - Body should summarise what was done and why. Reference the ticket key if one is present in
+     the ticket context above.
+3. Print the PR URL once created.
+"""
+repeat = 1
