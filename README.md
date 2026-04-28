@@ -1,18 +1,38 @@
 # Maestro
 
-**Automated workflow orchestration for AI coding agents.**
+**The companion CLI for [Maestro Core](https://github.com/morphet81/maestro-core) — set up and manage your AI coding pipeline in minutes.**
 
-Maestro polls your ticketing system (Jira, GitHub Issues, or manual input) for work, then runs a configurable pipeline for each ticket: create a branch, install dependencies, run AI agent steps (Claude Code or Cursor Agent), review, test, and open a PR — all in isolated Docker containers with a real-time web dashboard.
+Maestro Core is an AI coding pipeline that works at your pace: poll Jira or GitHub Issues automatically, run the full pipeline overnight (branch → implement → review → test → PR), or stay in the driver's seat and trigger each phase manually from the dashboard. The `maestro` CLI takes care of the boring part — generating config files, orchestrating Docker Compose, and running auth flows — so you can focus on what matters.
 
-## Why Maestro
+---
 
-- **Fully customizable workflows** — Define your own pipeline steps in YAML: which agents run, in what order, with what prompts. Every project can have a different workflow tailored to its stack and conventions.
-- **Ticket-aware AI** — Maestro reads your Jira or GitHub tickets before running agents, and can enrich them: add acceptance criteria, clarify scope, and keep ticket descriptions in sync with what was actually implemented.
-- **Visual dashboard** — Monitor every job in real time from the web UI: see which step is running, read agent logs, inspect diffs, and intervene when needed — without touching the terminal.
-- **Bot identity for traceability** — Connect a dedicated GitHub bot account so every PR, commit, and review comment made by Maestro is clearly attributed to an automation identity, keeping your team's git history clean and auditable.
-- **Isolated containers for security** — Each job runs inside its own Docker or Podman container with scoped credentials. Your host environment and secrets are never exposed to the agent; containers are discarded after the job completes.
-- **Focus on what matters** — Describe business value and architecture in your tickets; let Maestro handle the implementation. Engineers stay in the problem space — requirements, design decisions, trade-offs — while AI handles the code.
-- **Mermaid diagrams with live preview** — Embed Mermaid diagrams directly in your tickets and workflow definitions. Preview them live from the dashboard so you can visualise architecture and flows without leaving Maestro.
+## What you can achieve
+
+- **Fully automated mode** — connect Jira or GitHub Issues and Maestro polls automatically: it picks up "To Do" tickets, runs the full AI pipeline (worktree → install → implement → lint/tests → PR), and moves on to the next one.
+- **Manual mode, your pace** — add any ticket or task to the dashboard yourself, refine its description with AI assistance before the agent ever sees it, then trigger each workflow phase when you're ready.
+- **Mix both** — auto-pick routine tasks while manually curating the tricky ones.
+- **Run multiple tickets in parallel** — configure how many workflows run concurrently; each gets its own git worktree and isolated environment.
+- **Monitor everything in real time** — a live web dashboard streams terminal output per workflow, shows progress, and lets you pause, resume, retry, or inspect any run.
+- **Jump into any workflow** — open a browser-based VS Code editor and web terminal, pre-configured with your project tools, pointed at the exact worktree the agent is working on.
+- **Define your own pipeline steps** — TOML workflow definitions let you chain phases: implement → address PR comments → merge base branch. Steps depend on each other; trigger them from the dashboard.
+- **Work without a ticketing system** — paste any description via the dashboard and Maestro treats it as a workflow. No Jira account required.
+
+---
+
+## Why Maestro?
+
+| | IDE assistant (Copilot, Cursor inline) | Maestro |
+|---|---|---|
+| **Where it runs** | Inside your editor, on your machine | Inside Docker, on any machine or server |
+| **Supervision required** | Yes — you approve each step | Optional — fully autonomous or manual-trigger, your choice |
+| **Ticketing integration** | None | Jira, GitHub Issues, or standalone |
+| **Pipeline definition** | Single prompt | Multi-step TOML: implement, review, test, PR |
+| **Concurrent work** | One task at a time | Multiple tickets in parallel |
+| **Security boundary** | Full internet access from agent | Egress firewall — only approved hosts reachable |
+| **Team deployment** | Per-developer only | Self-host on a server; shared dashboard |
+| **Persistence** | Session ends when you close your editor | Survives container restarts; paused workflows resume |
+
+---
 
 ## Quick Start
 
@@ -69,7 +89,7 @@ You need **Docker** or **Podman** installed. The CLI auto-detects which one you 
 - [Docker Desktop](https://docs.docker.com/get-docker/)
 - [Podman](https://podman.io/getting-started/installation)
 
-Pull the Maestro container image:
+Pull the Maestro Core container image:
 
 ```bash
 docker pull ghcr.io/morphet81/maestro:latest
@@ -83,7 +103,7 @@ docker pull ghcr.io/morphet81/maestro:latest
 
 ### 3. Set up your project
 
-Create a directory for your Maestro project and run the interactive setup wizard:
+Create a directory for your project and run the interactive setup wizard:
 
 ```bash
 mkdir my-project && cd my-project
@@ -94,14 +114,14 @@ The wizard walks you through every configuration option (repo URL, ticketing sys
 
 ```
 my-project/
-  maestro.yml                # container orchestration
+  maestro.yml                      # Docker Compose orchestration
   .maestro/
-    config.toml              # project configuration
-    maestro.env              # secrets and API tokens (optional)
-    workflows/               # pipeline step definitions
-      ticket.toml
-      review.toml
+    config.toml                    # project configuration
+    maestro.env                    # secrets and API tokens
+    workflows/                     # pipeline step definitions
+      implement_ticket.toml
       merge_base.toml
+      address_pr_comments.toml
 ```
 
 ### 4. Authenticate
@@ -123,6 +143,8 @@ maestro start
 
 Open **http://localhost:8080** in your browser.
 
+If you configured Jira or GitHub Issues, Maestro starts polling automatically. Otherwise, click **+** to paste a description and kick off a workflow manually.
+
 ### Other commands
 
 ```bash
@@ -130,10 +152,7 @@ maestro stop       # stop Maestro services
 maestro restart    # restart Maestro services
 ```
 
-> **Multi-project isolation:** Docker Compose automatically prefixes all volumes with
-> the directory name (e.g., `my-app_claude-auth`, `my-app_workspace`). To run Maestro
-> on multiple projects simultaneously, use separate directories — each one gets fully
-> isolated auth, workspace, and caches with no configuration needed.
+> **Multi-project isolation:** Docker Compose automatically prefixes all volumes with the directory name (e.g., `my-app_claude-auth`, `my-app_workspace`). To run Maestro on multiple projects simultaneously, use separate directories — each one gets fully isolated auth, workspace, and caches with no configuration needed.
 
 ---
 
@@ -168,16 +187,12 @@ To use a PAT, pick one of two approaches:
 - **During `maestro auth`:** when prompted by the `gh` interactive login, paste the token.
 - **Via `maestro.env`:** add `GH_TOKEN=<your-token>` — `gh` picks this up automatically, no interactive login needed.
 
-Because there is no engine-level `gh` allowlist, the token scope is your only guardrail — a broad token means a hijacked agent session can perform any `gh` operation on any repo it has access to.
-
 ### Scoped Jira tokens (required when using Jira)
 
 Use a dedicated Jira service account or a scoped API token, not your personal admin credentials:
 
 - Grant only **Browse Projects**, **Create Issues** (for comment/transition), and **Assign Issues** on the target project(s).
 - Rotate the token if Maestro's container or its volumes are ever compromised.
-
-Because there is no engine-level `acli` allowlist, the token scope is your only guardrail — an admin token means a successful prompt-injection attack can read or modify any Jira project on your instance.
 
 ### Prompt injection
 
@@ -202,36 +217,36 @@ Maestro supports three modes:
 | Provider | Config | Setup |
 |----------|--------|-------|
 | **Claude Code** (default) | `provider = "claude"` | Authenticated during `maestro auth` or via `CLAUDE_CODE_OAUTH_TOKEN` |
-| **Cursor Agent** | `provider = "cursor"` | Set `cursor_cli = "agent"` and authenticate via `CURSOR_API_KEY` |
+| **Cursor Agent** | `provider = "cursor"` | Authenticate via `CURSOR_API_KEY` in `maestro.env` |
 
-### Workflow Steps
+### Workflow Definitions
 
-Maestro runs a configurable sequence of steps for each ticket. Steps can be:
+Maestro Core dynamically discovers `*.toml` files from the `workflows/` directory. The setup wizard generates three ready-to-use workflow definitions:
 
-- **Agent steps** — AI sessions with prompts (Claude Code or Cursor Agent)
-- **Command steps** — shell commands (e.g., `npm test`, `cargo clippy`)
+| File | Trigger | Description |
+|------|---------|-------------|
+| `implement_ticket.toml` | New ticket / manual | Full pipeline: implement → review → commit → lint/test → PR |
+| `merge_base.toml` | After implement | Merges the base branch into the current feature branch |
+| `address_pr_comments.toml` | After implement | Fixes PR review comments and re-runs lint/tests |
 
-See [`examples/workflows/`](examples/workflows/) for complete examples.
+Each definition uses `[[steps]]` with a `prompt` (ticket context auto-injected) or `commands`. Chain definitions with `depends_on` — "merge base" and "address PR comments" only become available after "implement ticket" completes.
 
-#### Inline steps (in config.toml)
-
+**Example step:**
 ```toml
-[[agent_steps]]
-name = "Implement"
-prompt = "Implement the feature described in: {description}"
+name = "Implement Ticket"
 
-[[agent_steps]]
-name = "Test"
-commands = ["npm test"]
-```
+[[steps]]
+name = "Implement ticket"
+prompt = """
+Follow instructions provided below:
+{description}
+...
+"""
+repeat = 1
 
-#### External step files
-
-```toml
-[general]
-ticket_workflow_steps_file = "workflows/ticket.toml"
-review_workflow_steps_file = "workflows/review.toml"
-merge_base_workflow_steps_file = "workflows/merge_base.toml"
+[[steps.skills]]
+name = "address-ticket"
+args = ["--no-jira", "--headless"]
 ```
 
 ### Run Commands
@@ -282,6 +297,9 @@ CLAUDE_CODE_OAUTH_TOKEN=sk-ant-...
 # Cursor Agent
 CURSOR_API_KEY=...
 
+# GitHub token (alternative to interactive gh login)
+GH_TOKEN=github_pat_...
+
 # Figma integration
 FIGMA_ACCESS_TOKEN=...
 
@@ -323,15 +341,13 @@ Available in agent step prompts and command step commands:
 
 This repository includes ready-to-use example configurations:
 
-Each preset is self-contained — copy the entire folder and edit `config.toml`:
-
 | Preset | Stack | Run Commands |
 |--------|-------|-------------|
 | [`examples/react-vite/`](examples/react-vite/) | React + Vite | Dev Server, Storybook, Preview Build |
 | [`examples/rust/`](examples/rust/) | Rust | Run Server, cargo watch tests |
 | [`examples/ruby-rails/`](examples/ruby-rails/) | Ruby on Rails | Rails Server, Console, Sidekiq |
 
-Each preset includes: `maestro.yml` and `.maestro/` (config.toml, maestro.env, workflows/).
+Each preset is self-contained — copy the entire folder and edit `config.toml`.
 
 ---
 
@@ -362,12 +378,12 @@ All configuration files live in the `.maestro/` subdirectory:
 my-project/
   maestro.yml
   .maestro/
-    config.toml        # project configuration
-    maestro.env        # secrets and API tokens (optional)
-    workflows/         # pipeline step definitions
-      ticket.toml
-      review.toml
+    config.toml                    # project configuration
+    maestro.env                    # secrets and API tokens (optional)
+    workflows/                     # pipeline step definitions
+      implement_ticket.toml
       merge_base.toml
+      address_pr_comments.toml
 ```
 
 ### 3. First-time setup
@@ -379,7 +395,7 @@ docker compose -f maestro.yml run --rm -it maestro setup
 
 **Podman:**
 ```bash
-touch .maestro/maestro.env    # create if missing (optional, for API tokens)
+touch .maestro/maestro.env
 P=$(basename "$(pwd)")
 
 podman run --rm -it \
@@ -419,9 +435,41 @@ Open **http://localhost:8080** in your browser.
 
 ---
 
+## Troubleshooting
+
+### npm install fails during setup
+
+Your npm registry is blocked by egress rules. Add the registry domain to `[network] extra_egress_hosts` in `config.toml`.
+
+### Claude Code auth not found after restart
+
+Auth is stored in Docker volumes. If volumes were deleted, re-run:
+```bash
+maestro auth
+```
+
+### Cursor agent login fails
+
+Rebuild the Maestro Core image — you may be on an outdated layer:
+```bash
+docker compose -f maestro.yml build --no-cache
+```
+
+Or set `CURSOR_API_KEY` in `maestro.env` to skip interactive auth.
+
+### `maestro start` stalls after "Egress rules applied"
+
+Auth preflight is running. For Cursor, set `CURSOR_API_KEY` in `maestro.env` to skip interactive auth checks.
+
+### Podman on Linux with SELinux
+
+Add `:z` or `:Z` to volume mounts, or set `security_opt: [label=disable]` in `maestro.yml`.
+
+---
+
 ## Source & License
 
-This repository contains the Maestro installer and distribution tooling, licensed under [MIT](LICENSE).
+This repository contains the Maestro CLI utility, licensed under [MIT](LICENSE).
 
-The Maestro application itself is open source under [AGPL v3](https://github.com/morphet81/maestro-core/blob/main/LICENSE).
+The Maestro Core application is open source under [AGPL v3](https://github.com/morphet81/maestro-core/blob/main/LICENSE).
 Source code is available at [github.com/morphet81/maestro-core](https://github.com/morphet81/maestro-core).
