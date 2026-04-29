@@ -4,5 +4,5 @@
 /maestro.yml
 /docker-compose.yml
 .gitleaks.toml
-gitleaks-report.json
+gitleak-report.json
 .playwright-mcp/
