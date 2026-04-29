@@ -3,3 +3,5 @@
 /.maestro/
 /maestro.yml
 /docker-compose.yml
+.gitleaks.toml
+.playwright-mcp/
