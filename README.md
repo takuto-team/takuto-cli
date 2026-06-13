@@ -12,6 +12,7 @@ Maestro Core is an AI coding pipeline that works at your pace: poll Jira or GitH
 - **Manual mode, your pace** — add any ticket or task to the dashboard yourself, refine its description with AI assistance before the agent ever sees it, then trigger each workflow phase when you're ready.
 - **Mix both** — auto-pick routine tasks while manually curating the tricky ones.
 - **Run multiple tickets in parallel** — configure how many workflows run concurrently; each gets its own git worktree and isolated environment.
+- **Work as a team** — Maestro is multi-user: each person signs in to a shared dashboard and sees only their own workflows. Self-host on a server and point everyone at the same instance.
 - **Monitor everything in real time** — a live web dashboard streams terminal output per workflow, shows progress, and lets you pause, resume, retry, or inspect any run.
 - **Jump into any workflow** — open a browser-based VS Code editor and web terminal, pre-configured with your project tools, pointed at the exact worktree the agent is working on.
 - **Define your own pipeline steps** — TOML workflow definitions let you chain phases: implement → address PR comments → merge base branch. Steps depend on each other; trigger them from the dashboard.
@@ -28,8 +29,8 @@ Maestro Core is an AI coding pipeline that works at your pace: poll Jira or GitH
 | **Ticketing integration** | None | Jira, GitHub Issues, or standalone |
 | **Pipeline definition** | Single prompt | Multi-step TOML: implement, review, test, PR |
 | **Concurrent work** | One task at a time | Multiple tickets in parallel |
+| **Team model** | Per-developer only | Multi-user dashboard; shared, self-hosted instance |
 | **Security boundary** | Full internet access from agent | Egress firewall — only approved hosts reachable |
-| **Team deployment** | Per-developer only | Self-host on a server; shared dashboard |
 | **Persistence** | Session ends when you close your editor | Survives container restarts; paused workflows resume |
 
 ---
@@ -110,19 +111,23 @@ mkdir my-project && cd my-project
 maestro setup
 ```
 
-The wizard walks you through every configuration option (repo URL, ticketing system, AI provider, model, etc.) and generates all required files:
+The wizard asks about ticketing system, AI provider/model, branch, ports, and (optionally) an external database, then generates all required files:
 
 ```
 my-project/
-  maestro.yml                      # Docker Compose orchestration
+  maestro.yml                      # Docker Compose orchestration (+ DinD sidecar)
   .maestro/
-    config.toml                    # project configuration
+    config.toml                    # bootstrap configuration (mounted read-write)
     maestro.env                    # secrets and API tokens
-    workflows/                     # pipeline step definitions
+    workflows/                     # pipeline definitions (auto-discovered)
       implement_ticket.toml
       merge_base.toml
       address_pr_comments.toml
 ```
+
+> The wizard no longer asks for a repository URL or dashboard credentials — you
+> clone repositories and create your admin account from the dashboard itself
+> (see steps 5–6). See [What moved to the dashboard](#what-moved-to-the-dashboard).
 
 ### 4. Authenticate
 
@@ -132,8 +137,8 @@ maestro auth
 
 This runs the first-time authentication flow inside the container:
 1. **GitHub CLI** (`gh`) — required for creating PRs
-2. **Claude Code** or **Cursor Agent** — your AI provider
-3. **Repository clone** — clones your project into the container's workspace
+2. **Atlassian CLI** (`acli`) — only if you chose Jira
+3. **Claude Code** / **Cursor Agent** / **Codex** / **OpenCode** — your AI provider
 
 ### 5. Start Maestro
 
@@ -143,7 +148,13 @@ maestro start
 
 Open **http://localhost:8080** in your browser.
 
-If you configured Jira or GitHub Issues, Maestro starts polling automatically. Otherwise, click **+** to paste a description and kick off a workflow manually.
+### 6. Create your admin account and add a repository
+
+Maestro is **multi-user**. On first boot the dashboard shows a setup page —
+the account you create there becomes the initial **admin**. Then:
+
+- Click **"Setup a New Project"** to clone the repository you want Maestro to work on.
+- If you configured Jira or GitHub Issues, polling starts automatically. Otherwise click **+** to paste a description and kick off a workflow manually.
 
 ### Other commands
 
@@ -152,7 +163,79 @@ maestro stop       # stop Maestro services
 maestro restart    # restart Maestro services
 ```
 
-> **Multi-project isolation:** Docker Compose automatically prefixes all volumes with the directory name (e.g., `my-app_claude-auth`, `my-app_workspace`). To run Maestro on multiple projects simultaneously, use separate directories — each one gets fully isolated auth, workspace, and caches with no configuration needed.
+`--docker` / `--podman` force a runtime; `--local` uses a locally built image instead of pulling.
+
+> **Multi-project isolation:** Docker Compose automatically prefixes all volumes with the directory name (e.g., `my-app_claude-auth`, `my-app_workspaces`). To run Maestro for multiple projects simultaneously, use separate directories — each one gets fully isolated auth, workspaces, database, and caches with no configuration needed.
+
+---
+
+## What moved to the dashboard
+
+Maestro Core now stores per-user and per-workspace settings in a database and
+edits them from the dashboard's **Configuration** screens. These are **no
+longer in `config.toml`** — the CLI doesn't generate them, and if an old config
+still contains them they are ignored (with a startup warning):
+
+| Used to be in `config.toml` | Now lives in |
+|---|---|
+| Dashboard login (`[web] dashboard_username` / `dashboard_password`) | Multi-user accounts in the database — create the admin on first boot |
+| Install / worktree-init commands (`[commands]`) | **Configuration → Worktree Settings** (per user + workspace) |
+| Run/stop dev-server buttons (`[[run_commands]]`) | **Configuration → Worktree Settings** |
+| Repository URL (`[git] repo_url`) | Dashboard **"Setup a New Project"** button (multiple repos supported) |
+| Per-provider model / endpoint | **Configuration → AI Settings** (`[agent.providers.<name>]` seeds the default) |
+| Polling filters & cadence | **Configuration → Item Polling** |
+| Workflow step file paths (`*_workflow_steps_file`) | Auto-discovery of every `*.toml` in `workflows/` |
+
+`config.toml` is mounted **read-write** so the dashboard can persist changes
+back to it — the file stays the source of truth for bootstrap settings.
+
+---
+
+## Multi-user model
+
+Maestro is multi-user, single-tenant. Everyone shares one instance (and its
+Jira/GitHub/AI credentials) but each person has their own dashboard view.
+
+- **First boot:** when the database has zero users, the dashboard shows a setup page. The account you create becomes the initial **admin**.
+- **Roles:** `admin` can manage users and shared state (config, polling, workspace switch, repo clone); `user` sees and acts only on workflows they created.
+- **Sessions:** username + password (argon2-hashed in `maestro.db`). Idle TTL 24 h, absolute TTL 30 days. After 5 failed logins in 10 minutes the account locks (an admin unlocks it). One-time recovery codes are issued at account creation.
+- **Poller ownership:** workflows created automatically by the Jira/GitHub poller are owned by `[general] poller_owner_username` (defaults to the first admin).
+
+User management lives at **Configuration → Users** (admin-only). Full details are in Maestro Core's [README](https://github.com/morphet81/maestro-core#multi-user-model).
+
+---
+
+## External database
+
+By default Maestro stores users, sessions, and snapshots in a local SQLite file
+inside the `maestro-data` volume — zero configuration. For team or
+multi-instance deployments you can point it at an external **PostgreSQL**,
+**MySQL**, or **MariaDB**.
+
+Two ways to configure it:
+
+**In `.maestro/config.toml`:**
+```toml
+[database]
+connection = "postgres://maestro:s3cret@db.example:5432/maestro"
+# fail_fast = true          # abort startup if the DB is unreachable (default true)
+# import_from_sqlite = true # one-shot copy of an existing maestro.db on first boot (default true)
+```
+
+**Or via `.maestro/maestro.env`** (takes precedence; keeps the secret out of `config.toml`):
+```bash
+export MAESTRO_DATABASE_CONNECTION="postgres://maestro:s3cret@db.example:5432/maestro"
+```
+
+Supported schemes: `sqlite://…`, `postgres://…` (and `postgresql://…`),
+`mysql://…` (covers MariaDB). On first boot against an empty external database,
+Maestro copies an existing local `maestro.db` over and then skips the import on
+subsequent restarts.
+
+> The database backend is **restart-only** — changing it requires `maestro restart`.
+> Make sure the database host is reachable from the container: add it to
+> `[network] extra_egress_hosts` (the egress firewall blocks unknown hosts), or
+> run the database as a service on the same Docker network.
 
 ---
 
@@ -160,7 +243,7 @@ maestro restart    # restart Maestro services
 
 > **⚠ Maestro runs AI agents autonomously and unattended.** Before going live, make sure the mitigations below are in place. A misconfigured setup can result in unreviewed code being pushed to protected branches or sensitive data being over-shared with the AI model.
 
-**Security model:** Maestro does not maintain an engine-level allowlist for `gh` or `acli` calls. Security is delegated entirely to the token permissions you configure — scope your tokens to the minimum required.
+**Security model:** Maestro does not maintain an engine-level allowlist for `gh` or `acli` calls by default. Security is delegated to the token permissions you configure — scope your tokens to the minimum required.
 
 ### Branch protection (required)
 
@@ -185,7 +268,7 @@ Use a **fine-grained personal access token** (PAT) scoped to the target reposito
 To use a PAT, pick one of two approaches:
 
 - **During `maestro auth`:** when prompted by the `gh` interactive login, paste the token.
-- **Via `maestro.env`:** add `GH_TOKEN=<your-token>` — `gh` picks this up automatically, no interactive login needed.
+- **Via `maestro.env`:** add `export GH_TOKEN=<your-token>` — `gh` picks this up automatically, no interactive login needed.
 
 ### Scoped Jira tokens (required when using Jira)
 
@@ -194,34 +277,67 @@ Use a dedicated Jira service account or a scoped API token, not your personal ad
 - Grant only **Browse Projects**, **Create Issues** (for comment/transition), and **Assign Issues** on the target project(s).
 - Rotate the token if Maestro's container or its volumes are ever compromised.
 
+### Dashboard authentication
+
+The dashboard is protected by **multi-user authentication** that can't be
+disabled: every instance requires an admin account created on first boot, and
+sessions are argon2-backed with idle/absolute TTLs, account lockout, and per-IP
+rate limiting on login. When exposing the dashboard beyond localhost, terminate
+TLS in front of it and set `[web] cors_origins` (and, if needed, `cookie_secure`).
+
 ### Prompt injection
 
-Ticket descriptions (Jira or GitHub Issues) are embedded in AI prompts. Treat them like user-supplied content: a malicious ticket could attempt to override agent instructions. Branch protection and scoped tokens are your main defence — they limit what a hijacked agent session can actually do.
+Ticket descriptions (Jira or GitHub Issues) are embedded in AI prompts. Treat them like user-supplied content: a malicious ticket could attempt to override agent instructions. Branch protection and scoped tokens are your main defence — they limit what a hijacked agent session can actually do. Maestro also adds explicit untrusted-content framing and optional `[jira]` byte caps.
 
 ---
 
 ## Configuration Guide
 
-### Ticketing System
+`config.toml` holds **bootstrap** settings (needed before the dashboard and
+database exist). Everything else is edited from the dashboard. The canonical
+per-key reference lives in Maestro Core's
+[`docs/configuration.md`](https://github.com/morphet81/maestro-core/blob/main/docs/configuration.md).
 
-Maestro supports three modes:
+### Ticketing System
 
 | Mode | Config | Description |
 |------|--------|-------------|
 | **None** (default) | `ticketing_system = "none"` | Start workflows manually from the dashboard |
-| **GitHub Issues** | `ticketing_system = "github"` | Polls GitHub Issues from your repo |
-| **Jira** | `ticketing_system = "jira"` | Polls Jira for To Do tickets (requires Atlassian CLI auth) |
+| **GitHub Issues** | `ticketing_system = "github"` | Polls GitHub Issues; the repo is detected from the cloned project's git remote |
+| **Jira** | `ticketing_system = "jira"` | Polls Jira for To Do tickets (requires `acli` auth and `[jira] site` / `email`) |
 
 ### AI Provider
 
+`provider` in `[agent]` selects the tool; per-provider model and endpoint
+details go in `[agent.providers.<name>]` (and are editable from
+**Configuration → AI Settings**).
+
 | Provider | Config | Setup |
 |----------|--------|-------|
-| **Claude Code** (default) | `provider = "claude"` | Authenticated during `maestro auth` or via `CLAUDE_CODE_OAUTH_TOKEN` |
-| **Cursor Agent** | `provider = "cursor"` | Authenticate via `CURSOR_API_KEY` in `maestro.env` |
+| **Claude Code** (default) | `provider = "claude"` | OAuth during `maestro auth`, or `ANTHROPIC_API_KEY` / `CLAUDE_CODE_OAUTH_TOKEN` in `maestro.env` |
+| **Cursor Agent** | `provider = "cursor"` | Interactive login during `maestro auth`, or `CURSOR_API_KEY` in `maestro.env` |
+| **Codex** | `provider = "codex"` | OpenAI-compatible; configure model/endpoint under `[agent.providers.codex]` |
+| **OpenCode** | `provider = "opencode"` | Self-hosted / OpenAI-compatible (LM Studio, Ollama, vLLM…); set `model` and `base_url` under `[agent.providers.opencode]` |
+
+```toml
+[agent]
+provider = "claude"
+step_timeout_secs = 1800
+
+[agent.providers.claude]
+# model = "claude-sonnet-4-6"   # empty/unset = automatic selection
+```
+
+> Running a model server on your **host machine** for OpenCode? Docker may block
+> the worker containers from reaching `host.docker.internal`. Maestro Core ships
+> a small bridge sidecar for that case — see its
+> [self-hosted model docs](https://github.com/morphet81/maestro-core/blob/main/docs/troubleshooting-self-hosted-models.md).
 
 ### Workflow Definitions
 
-Maestro Core dynamically discovers `*.toml` files from the `workflows/` directory. The setup wizard generates three ready-to-use workflow definitions:
+Maestro Core discovers **every** `*.toml` file in the `workflows/` directory at
+startup — there are no per-file config keys anymore. The wizard generates three
+ready-to-use definitions:
 
 | File | Trigger | Description |
 |------|---------|-------------|
@@ -229,51 +345,33 @@ Maestro Core dynamically discovers `*.toml` files from the `workflows/` director
 | `merge_base.toml` | After implement | Merges the base branch into the current feature branch |
 | `address_pr_comments.toml` | After implement | Fixes PR review comments and re-runs lint/tests |
 
-Each definition uses `[[steps]]` with a `prompt` (ticket context auto-injected) or `commands`. Chain definitions with `depends_on` — "merge base" and "address PR comments" only become available after "implement ticket" completes.
+Each definition has a top-level `name`, optional `depends_on`, and `[[steps]]`
+entries with a `prompt` (ticket context auto-injected), `commands`, or `skills`.
+Chain definitions with `depends_on` — "merge base" and "address PR comments"
+only become available after "implement ticket" completes.
 
-**Example step:**
 ```toml
 name = "Implement Ticket"
 
 [[steps]]
 name = "Implement ticket"
 prompt = """
-Follow instructions provided below:
-{description}
+Follow the instructions in the system prompt.
 ...
 """
+when = "ticketing"        # "always" | "ticketing" | "no_ticketing"
 repeat = 1
 
 [[steps.skills]]
-name = "address-ticket"
-args = ["--no-jira", "--headless"]
+name = "create-pr"
+args = ["--no-draft"]
 ```
 
-### Run Commands
+### Worktree settings & run commands (dashboard)
 
-Define custom commands that appear as buttons on completed workflow cards:
-
-```toml
-[[run_commands]]
-name = "Dev Server"
-command = "cd app && npm run dev"
-
-[[run_commands]]
-name = "Storybook"
-command = "npx storybook dev -p 6006"
-```
-
-Containers run with automatic port detection — when a dev server starts, a port-forward button appears on the dashboard card.
-
-### Dashboard Authentication
-
-```toml
-[web]
-dashboard_username = "admin"
-dashboard_password = "your-secure-password"
-```
-
-Leave both empty to disable authentication.
+Install / worktree-init commands and the run/stop dev-server buttons that appear
+on workflow cards are **per-user and per-workspace** — configure them in
+**Configuration → Worktree Settings**. They are not in `config.toml`.
 
 ### GitHub App (optional)
 
@@ -283,39 +381,69 @@ For bot-attributed commits and PRs instead of your personal account:
 [github]
 app_id = 123456
 app_installation_id = 78901234
-app_private_key_path = "/etc/maestro/github-app-key.pem"
+# Either an inline PEM key…
+app_private_key = """
+-----BEGIN RSA PRIVATE KEY-----
+...
+-----END RSA PRIVATE KEY-----
+"""
+# …or a path to a PEM file:
+# app_private_key_path = "/etc/maestro/github-app-key.pem"
 ```
+
+Required App permissions: contents (write), pull_requests (write), metadata (read).
+
+### Provisioning (extra CLI tools)
+
+Install tools that aren't baked into the image (e.g. `kubectl`, `terraform`, a
+pinned `claude` version) into a shared volume on every start. The install is
+SHA-gated, so unchanged lists are a no-op:
+
+```toml
+[provisioning]
+install_commands = [
+  '[ -f "$MAESTRO_TOOLS_BIN/kubectl" ] || (curl -fsSLo "$MAESTRO_TOOLS_BIN/kubectl" https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl && chmod +x "$MAESTRO_TOOLS_BIN/kubectl")',
+]
+```
+
+See Maestro Core's [`docs/extending-maestro.md`](https://github.com/morphet81/maestro-core/blob/main/docs/extending-maestro.md) for the full model.
 
 ### Environment Variables
 
-Secrets and API tokens go in `maestro.env` (mounted at `/etc/maestro/env`):
+Secrets and API tokens go in `maestro.env` (mounted at `/etc/maestro/env`). Only `export VAR=value` lines are honoured:
 
 ```bash
 # Claude Code (skip interactive login)
-CLAUDE_CODE_OAUTH_TOKEN=sk-ant-...
+export CLAUDE_CODE_OAUTH_TOKEN=sk-ant-...
+export ANTHROPIC_API_KEY=sk-ant-...
 
 # Cursor Agent
-CURSOR_API_KEY=...
+export CURSOR_API_KEY=...
 
 # GitHub token (alternative to interactive gh login)
-GH_TOKEN=github_pat_...
+export GH_TOKEN=github_pat_...
+
+# Custom Anthropic proxy / gateway
+export ANTHROPIC_BASE_URL=https://custom-proxy.example.com/claude
+
+# External database (alternative to [database].connection)
+export MAESTRO_DATABASE_CONNECTION=postgres://maestro:pw@db.example:5432/maestro
 
 # Figma integration
-FIGMA_ACCESS_TOKEN=...
-
-# Custom proxy
-ANTHROPIC_BASE_URL=https://custom-proxy.example.com/claude
+export FIGMA_API_TOKEN=...
 ```
 
 ---
 
 ## Dashboard Features
 
+- **Multi-user sign-in** with per-user workflow isolation and an admin **Users** screen
+- **"Setup a New Project"** — clone and switch between multiple repositories
 - **Real-time workflow cards** with progress segments and live terminal output
 - **Ticket description editor** with Markdown preview, Mermaid diagrams, and AI improvement
 - **Browser-based VS Code editor** and **web terminal** per workflow
 - **Port forwarding** — auto-detected dev server ports shown as clickable buttons
-- **Run commands** — custom shell commands on completed workflows
+- **Run commands** — custom shell commands on completed workflows (Worktree Settings)
 - **PWA** — installable progressive web app
 
 ---
@@ -341,13 +469,15 @@ Available in agent step prompts and command step commands:
 
 This repository includes ready-to-use example configurations:
 
-| Preset | Stack | Run Commands |
+| Preset | Stack | Notes |
 |--------|-------|-------------|
-| [`examples/react-vite/`](examples/react-vite/) | React + Vite | Dev Server, Storybook, Preview Build |
-| [`examples/rust/`](examples/rust/) | Rust | Run Server, cargo watch tests |
-| [`examples/ruby-rails/`](examples/ruby-rails/) | Ruby on Rails | Rails Server, Console, Sidekiq |
+| [`examples/react-vite/`](examples/react-vite/) | React + Vite | Dynamic port forwarding for Vite/Storybook |
+| [`examples/rust/`](examples/rust/) | Rust | Toolchain pre-installed in the image |
+| [`examples/ruby-rails/`](examples/ruby-rails/) | Ruby on Rails | Ruby via mise |
 
 Each preset is self-contained — copy the entire folder and edit `config.toml`.
+Install commands and run-command buttons are configured from the dashboard
+(**Configuration → Worktree Settings**), not the preset.
 
 ---
 
@@ -363,28 +493,18 @@ cp -r examples/react-vite/ my-project && cd my-project
 
 ### 2. Edit .maestro/config.toml
 
-Configure at minimum:
+Configure at minimum the ticketing system and your base branch:
 
 ```toml
+[general]
+ticketing_system = "none"   # or "github" / "jira"
+
 [git]
-repo_url = "https://github.com/your-org/your-repo.git"
-
-[commands]
-install = "npm install"    # or pip install, cargo build, etc.
+base_branch = "main"
 ```
 
-All configuration files live in the `.maestro/` subdirectory:
-```
-my-project/
-  maestro.yml
-  .maestro/
-    config.toml                    # project configuration
-    maestro.env                    # secrets and API tokens (optional)
-    workflows/                     # pipeline step definitions
-      implement_ticket.toml
-      merge_base.toml
-      address_pr_comments.toml
-```
+Repositories are cloned from the dashboard, and install commands live in
+**Configuration → Worktree Settings** — so there's nothing else required to boot.
 
 ### 3. First-time setup
 
@@ -400,18 +520,25 @@ P=$(basename "$(pwd)")
 
 podman run --rm -it \
   --security-opt=label=disable \
-  -v "$(pwd)/.maestro/config.toml":/etc/maestro/config.toml:ro \
+  -v "$(pwd)/.maestro/config.toml":/etc/maestro/config.toml:rw \
   -v "$(pwd)/.maestro/workflows":/etc/maestro/workflows:ro \
   -v "$(pwd)/.maestro/maestro.env":/etc/maestro/env:ro \
+  -v "${P}_maestro-data":/home/maestro/.maestro \
   -v "${P}_claude-auth":/home/maestro/.claude \
   -v "${P}_cursor-auth":/home/maestro/.cursor \
+  -v "${P}_agents-data":/home/maestro/.agents \
   -v "${P}_gh-auth":/home/maestro/.config/gh \
+  -v "${P}_acli-auth":/home/maestro/.config/acli \
+  -v "${P}_fcli-auth":/home/maestro/.config/fcli \
+  -v "${P}_workspaces":/workspaces \
   -v "${P}_workspace":/workspace \
   -v "${P}_npm-cache":/home/maestro/.npm \
   -v "${P}_mise-data":/home/maestro/.local/share/mise \
   -v "${P}_mise-cache":/home/maestro/.cache/mise \
   -e MAESTRO_CONFIG=/etc/maestro/config.toml \
   -e MAESTRO_HOME=/home/maestro \
+  -e MAESTRO_DATA_DIR=/home/maestro/.maestro \
+  -e CURSOR_CONFIG_DIR=/home/maestro/.cursor \
   -e NODE_OPTIONS=--dns-result-order=ipv4first \
   ghcr.io/morphet81/maestro:latest setup
 ```
@@ -431,7 +558,7 @@ docker compose -f maestro.yml up -d
 podman compose -f maestro.yml up -d
 ```
 
-Open **http://localhost:8080** in your browser.
+Open **http://localhost:8080**, create your admin account on the first-boot page, then clone a repository via **"Setup a New Project"**.
 
 ---
 
@@ -447,6 +574,12 @@ Auth is stored in Docker volumes. If volumes were deleted, re-run:
 ```bash
 maestro auth
 ```
+
+### Can't reach an external database
+
+The egress firewall blocks unknown hosts. Add the database host to
+`[network] extra_egress_hosts`, or run it as a service on the same Docker
+network. Changing the backend requires `maestro restart`.
 
 ### Cursor agent login fails
 

@@ -1,13 +1,23 @@
+# Merge base branch workflow. Becomes available after "Implement Ticket"
+# completes (depends_on). Workflows are discovered automatically from this
+# directory — no config.toml key needed.
+#
+# Placeholders: {base_branch}, {pr_url}, {ticket_context}
+
 name = "Merge Base Branch"
 depends_on = ["implement_ticket"]
 
+# ── Step 1: Merge base branch ────────────────────────────────────────────────
 [[steps]]
 name = "Merge base branch"
 prompt = """
-Merge base branch `{base_branch}` as instructed in the prompt.
+Fetch the latest `{base_branch}` from remote and merge it into the current branch.
+
+Resolve any conflicts — prefer the current branch's changes for new feature code, but keep
+the base branch's changes for configuration and dependency files unless they directly conflict
+with this ticket's work.
+
+Run lint and tests after the merge to verify no regressions were introduced.
+Commit the merge and push.
 """
 repeat = 1
-
-[[steps.skills]]
-name = "merge-base-branch"
-args = []

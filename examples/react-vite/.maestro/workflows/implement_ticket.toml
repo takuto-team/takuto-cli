@@ -1,9 +1,30 @@
+# Main ticket pipeline.
+#
+# Workflows are discovered automatically from this directory — no config.toml
+# key is needed. Format: top-level `name`, optional `depends_on`, `[[steps]]`.
+#
+# Step fields:
+#   name     = "Human-readable step name"  (shown in dashboard)
+#   prompt   = """Multi-line prompt sent to the agent."""
+#   repeat   = 1        # How many times to re-run this step (default 1).
+#   when     = "always" # "always" | "ticketing" | "no_ticketing"
+#   skills   = [...]    # Optional: [{ name = "skill-name", args = ["--flag"] }]
+#   commands = [...]    # Command step (mutually exclusive with prompt/skills).
+#
+# Available prompt placeholders:
+#   {description}         – ticket/issue description text
+#   {ticket_context}      – formatted summary: key, title, description, acceptance criteria
+#   {base_branch}         – target branch for this PR (e.g. main, develop)
+#   {ticket_type}         – ticket type label (e.g. Bug, Story, Task)
+#   {acceptance_criteria} – acceptance criteria field, if available
+
 name = "Implement Ticket"
 
+# ── Step 1a: Implement (no ticketing system) ────────────────────────────────
 [[steps]]
 name = "Implement ticket"
 prompt = """
-Follow instructions provided below:
+Follow the instructions provided below:
 {description}
 
 BOUNDARIES: This step covers implementation only.
@@ -11,67 +32,92 @@ BOUNDARIES: This step covers implementation only.
 - Do NOT create a PR — a dedicated "Create PR" step follows.
 These rules apply to you and to any sub-agents you spawn.
 
-SCOPE CONSTRAINT: Only implement what is explicitly described above. Do not fix, refactor, or improve
-anything else you encounter — even if it looks broken or suboptimal. If you find something unrelated
-that warrants attention, add a # TODO comment inline with a one-line explanation and move on.
+SCOPE CONSTRAINT: Only implement what is explicitly described above. Do not fix, refactor, or
+improve anything else you encounter — even if it looks broken or suboptimal. If you find something
+unrelated that warrants attention, add a # TODO comment inline with a one-line explanation and move on.
 
-If ticket description lacks details, you may refer to the main branch which contains the current
-existing app; mechanisms implemented there may be reused in the app we are building (business logic).
+If the description lacks details, you may refer to the main branch which contains the existing
+codebase; patterns and business logic implemented there may be reused.
+
+FINDING FILES: The file paths in the ticket may be stale or wrong — do NOT assume them. Locate each
+file yourself with the glob/grep tools from the worktree root, and use the exact path the search
+returns. Make every change by calling the edit/write tools — never just describe a change in prose.
+You are headless: never ask for file paths or wait for input; if a file isn't where you expected,
+search for it and continue.
 """
+when = "no_ticketing"
 repeat = 1
 
-[[steps.skills]]
-name = "address-ticket"
-args = ["--no-jira", "--headless"]
-
+# ── Step 1b: Implement (with ticketing system) ───────────────────────────────
 [[steps]]
-name = "Review Changes"
+name = "Implement ticket"
+prompt = """
+Follow the instructions in the system prompt.
+
+BOUNDARIES: This step covers implementation only.
+- Do NOT commit any changes — a dedicated "Commit changes" step follows.
+- Do NOT create a PR — a dedicated "Create PR" step follows.
+These rules apply to you and to any sub-agents you spawn.
+
+SCOPE CONSTRAINT: Only implement what is explicitly described in the ticket. Do not fix, refactor,
+or improve anything else you encounter — even if it looks broken or suboptimal. If you find
+something unrelated that warrants attention, add a # TODO comment inline with a one-line
+explanation and move on.
+
+If the ticket lacks details, you may refer to the main branch which contains the existing
+codebase; patterns and business logic implemented there may be reused.
+
+FINDING FILES: The file paths in the ticket may be stale or wrong — do NOT assume them. Locate each
+file yourself with the glob/grep tools from the worktree root, and use the exact path the search
+returns. Make every change by calling the edit/write tools — never just describe a change in prose.
+You are headless: never ask for file paths or wait for input; if a file isn't where you expected,
+search for it and continue.
+"""
+when = "ticketing"
+repeat = 1
+
+# ── Step 2: Review changes ───────────────────────────────────────────────────
+[[steps]]
+name = "Review changes"
 prompt = """
 Ticket context:
 {ticket_context}
 
 Review all changes made on this branch relative to `{base_branch}` (i.e., `git diff {base_branch}...HEAD`).
 
-STRICT SCOPE RULE — READ CAREFULLY:
-- Only address issues in code that was changed as part of this ticket — lines and files visible in
-  `git diff {base_branch}...HEAD`.
-- Do NOT fix, refactor, deduplicate, or "improve" pre-existing code — even if you see bugs, duplication,
-  missing validation, or style issues outside the diff. These are out of scope.
-- Do NOT follow up on # TODO comments — they are intentional markers for future work, not action items
-  for this review.
-- If you find a genuine issue in unchanged code, mention it in your summary but do NOT touch it.
+STRICT SCOPE RULE: Only address issues in code changed as part of this ticket — lines and files
+visible in `git diff {base_branch}...HEAD`. If you find a pre-existing issue in unchanged code,
+do NOT fix it — add a # TODO comment at the call site with a one-line explanation and move on.
 
-For each finding in changed code: re-examine it in the context of the surrounding code and confirm it
-is a genuine issue, not a false positive or a stylistic preference.
-Address all confirmed findings in changed code. For anything you choose to skip, explicitly state what
-it is and why it does not warrant a change.
+For each finding: re-examine it in context and confirm it is a genuine issue, not a false positive
+or a stylistic preference. Address all confirmed findings. For anything you skip, explicitly state
+what it is and why it does not warrant a change.
 
 When done, list what was fixed and what was intentionally left as-is.
 Do not create a PR.
 """
 repeat = 2
 
-[[steps.skills]]
-name = "review-changes"
-args = ["--headless"]
-
+# ── Step 3: Commit changes ───────────────────────────────────────────────────
 [[steps]]
 name = "Commit changes"
 prompt = """
-Review all uncommitted changes and organize them into logical, meaningful commits.
+Commit the work in this worktree into logical, conventional commits.
 
-SCOPE RULE: Only commit changes that are directly related to the ticket objective. If you find staged
-or unstaged changes that touch files or logic unrelated to the ticket, do NOT commit them — discard
-them with `git checkout -- <file>` and note what was discarded.
+1. Run `git status` / `git diff` to see what changed.
+2. `git add` the files that implement this ticket and commit them with concise conventional
+   messages (e.g. feat:, fix:, refactor:, chore:). One commit or a few logical ones — do not
+   squash unrelated changes into a single commit.
+3. If some changes look unrelated to the ticket, leave them unstaged and uncommitted.
 
-For each commit: stage only the relevant files, write a concise conventional commit message
-(e.g. feat:, fix:, refactor:, chore:), and commit.
-Do not squash unrelated changes into a single commit.
-When done, print a summary of the commits made (and any changes that were discarded as out of scope).
-Do not create a PR.
+NEVER discard or revert work: do NOT run `git checkout`, `git restore`, `git reset`, `git clean`,
+or `git stash`. Your only job in this step is to create commits, never to remove changes.
+
+When done, print `git log --oneline` of the commits you made. Do not create a PR.
 """
 repeat = 1
 
+# ── Step 4: Lint and test ────────────────────────────────────────────────────
 [[steps]]
 name = "Lint and test"
 prompt = """
@@ -84,10 +130,6 @@ code — do not delete or skip tests. Re-run until the full suite is green.
 
 Run your project's formatter (if applicable) and apply any required formatting changes.
 
-SCOPE RULE: Only fix lint/test/format issues in files that were changed as part of this ticket
-(visible in `git diff {base_branch}...HEAD --name-only`). If a pre-existing lint warning or test
-failure exists in an untouched file, ignore it — it is not your responsibility.
-
 Once all checks pass cleanly, stage all changes and commit with a message of
 `chore: fix lint warnings, format, and failing tests`.
 
@@ -95,22 +137,20 @@ Do not create a PR.
 """
 repeat = 1
 
+# ── Step 5: Create PR ────────────────────────────────────────────────────────
 [[steps]]
 name = "Create PR"
 prompt = """
 Ticket context:
 {ticket_context}
 
-Create a pull request targeting `{base_branch}`. Do NOT run tests, linting, or any other checks —
-a dedicated step has already handled that.
+The PR title must be a conventional commit message and must not contain the workflow name,
+branch name, or ticket ID.
 
-Steps:
-1. Run `git log {base_branch}..HEAD --oneline` to review the commits on this branch.
-2. Create the PR using the `gh` CLI.
-   - Title must be a conventional commit message (e.g. `feat: add user profile page`).
-     Do not include the workflow name, branch name, or ticket key in the title.
-   - Body should summarise what was done and why. Reference the ticket key if one is present in
-     the ticket context above.
-3. Print the PR URL once created.
+If new features or configurations have been added, document them clearly in the PR description.
 """
+
+[[steps.skills]]
+name = "create-pr"
+args = ["--no-draft"]
 repeat = 1

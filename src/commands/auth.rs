@@ -81,11 +81,12 @@ pub fn run(rt: &Runtime, local: bool) -> Result<()> {
             }
             cmd.args(["--security-opt=label=disable"]);
 
-            // Config mounts from .maestro/ (read-only)
+            // Config mounts from .maestro/ (config is read-write so the
+            // setup flow can persist changes back to the file)
             cmd.args([
                 "-v",
                 &format!(
-                    "{}:/etc/maestro/config.toml:ro",
+                    "{}:/etc/maestro/config.toml:rw",
                     mdir.join("config.toml").display()
                 ),
             ]);
@@ -102,9 +103,14 @@ pub fn run(rt: &Runtime, local: bool) -> Result<()> {
             ]);
 
             // Named volumes (project-isolated, matching Compose naming)
+            cmd.args(["-v", &format!("{p}_maestro-data:/home/maestro/.maestro")]);
             cmd.args(["-v", &format!("{p}_claude-auth:/home/maestro/.claude")]);
             cmd.args(["-v", &format!("{p}_cursor-auth:/home/maestro/.cursor")]);
+            cmd.args(["-v", &format!("{p}_agents-data:/home/maestro/.agents")]);
             cmd.args(["-v", &format!("{p}_gh-auth:/home/maestro/.config/gh")]);
+            cmd.args(["-v", &format!("{p}_acli-auth:/home/maestro/.config/acli")]);
+            cmd.args(["-v", &format!("{p}_fcli-auth:/home/maestro/.config/fcli")]);
+            cmd.args(["-v", &format!("{p}_workspaces:/workspaces")]);
             cmd.args(["-v", &format!("{p}_workspace:/workspace")]);
             cmd.args(["-v", &format!("{p}_npm-cache:/home/maestro/.npm")]);
             cmd.args([
@@ -116,6 +122,8 @@ pub fn run(rt: &Runtime, local: bool) -> Result<()> {
             // Environment
             cmd.args(["-e", "MAESTRO_CONFIG=/etc/maestro/config.toml"]);
             cmd.args(["-e", "MAESTRO_HOME=/home/maestro"]);
+            cmd.args(["-e", "MAESTRO_DATA_DIR=/home/maestro/.maestro"]);
+            cmd.args(["-e", "CURSOR_CONFIG_DIR=/home/maestro/.cursor"]);
             cmd.args(["-e", "NODE_OPTIONS=--dns-result-order=ipv4first"]);
 
             // Image + command

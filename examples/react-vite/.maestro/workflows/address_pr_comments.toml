@@ -1,17 +1,29 @@
+# PR review loop. Becomes available after "Implement Ticket" completes
+# (depends_on). Workflows are discovered automatically from this directory —
+# no config.toml key needed.
+#
+# Placeholders: {pr_url}, {ticket_context}, {base_branch}
+
 name = "Address PR Comments"
 depends_on = ["implement_ticket"]
 
+# ── Step 1: Fix review comments ──────────────────────────────────────────────
 [[steps]]
 name = "Fix review comments"
 prompt = """
-Follow instructions from the prompt.
+Pull request URL: {pr_url}
+
+Ticket context:
+{ticket_context}
+
+Retrieve all unresolved PR review comments and feedback.
+For each item: make the necessary code changes, verify the fix locally, commit with a descriptive
+message, and push to the PR branch.
+Do not bypass linting or tests while making fixes.
 """
 repeat = 1
 
-[[steps.skills]]
-name = "address-pr-comments"
-args = []
-
+# ── Step 2: Lint and test ────────────────────────────────────────────────────
 [[steps]]
 name = "Lint and test"
 prompt = """

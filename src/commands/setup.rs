@@ -36,16 +36,9 @@ pub fn run() -> Result<()> {
     };
 
     // ── Git ──────────────────────────────────────────────────────────────
+    // Note: repositories are cloned from the dashboard ("Setup a New Project")
+    // — there is no repo URL in config.toml anymore.
     section_header("Git");
-
-    config.git.repo_url = Input::new()
-        .with_prompt("Repository URL")
-        .default(if config.git.repo_url.is_empty() {
-            "https://github.com/your-org/your-repo.git".to_string()
-        } else {
-            config.git.repo_url.clone()
-        })
-        .interact_text()?;
 
     config.git.base_branch = Input::new()
         .with_prompt("Base branch")
@@ -105,10 +98,10 @@ pub fn run() -> Result<()> {
         .interact()?;
     config.general.log_level = log_options[log_idx].to_string();
 
-    // ── Agent ────────────────────────────────────────────────────────────
+    // ── AI Agent ───────────────────────────────────────────────────────────
     section_header("AI Agent");
 
-    let provider_options = &["claude", "cursor"];
+    let provider_options = &["claude", "cursor", "codex", "opencode"];
     let current_provider_idx = provider_options
         .iter()
         .position(|&s| s == config.agent.provider)
@@ -120,100 +113,24 @@ pub fn run() -> Result<()> {
         .interact()?;
     config.agent.provider = provider_options[provider_idx].to_string();
 
-    {
-        let mut model_options: Vec<&str> = match config.agent.provider.as_str() {
-            "claude" => vec![
-                "(default)",
-                "claude-opus-4-7",
-                "claude-opus-4-6",
-                "claude-sonnet-4-6",
-                "claude-haiku-4-5-20251001",
-                "claude-sonnet-4-5-20250929",
-                "Custom...",
-            ],
-            "cursor" => vec![
-                "(default)",
-                "claude-opus-4-7",
-                "claude-sonnet-4-6",
-                "gpt-5.4",
-                "gpt-5",
-                "gpt-5-mini",
-                "gemini-3.1-pro",
-                "gemini-3-flash",
-                "Custom...",
-            ],
-            _ => vec!["(default)", "Custom..."],
-        };
-
-        // If current model is set and not already in the list, insert it after (default)
-        let current = config.agent.model.as_str();
-        let current_in_list = current.is_empty()
-            || model_options.iter().any(|&o| o == current);
-        if !current_in_list {
-            model_options.insert(1, Box::leak(current.to_string().into_boxed_str()));
-        }
-
-        let default_idx = if current.is_empty() {
-            0
-        } else {
-            model_options.iter().position(|&o| o == current).unwrap_or(0)
-        };
-
-        let model_idx = Select::new()
-            .with_prompt("Model")
-            .items(&model_options)
-            .default(default_idx)
-            .interact()?;
-
-        let selected = model_options[model_idx];
-        config.agent.model = if selected == "(default)" {
-            String::new()
-        } else if selected == "Custom..." {
-            Input::new()
-                .with_prompt("Enter model name")
-                .default(config.agent.model.clone())
-                .allow_empty(true)
-                .interact_text()?
-        } else {
-            selected.to_string()
-        };
-    }
+    // Model, endpoint, and other per-provider details (`[agent.providers.<name>]`)
+    // are managed from the dashboard's Configuration → AI Settings — the wizard
+    // only sets the default provider so `maestro auth` knows which CLI to log in.
 
     config.agent.step_timeout_secs = Input::new()
         .with_prompt("Step timeout (seconds)")
         .default(config.agent.step_timeout_secs)
         .interact_text()?;
 
-    // ── Commands ─────────────────────────────────────────────────────────
-    section_header("Commands");
-
-    config.commands.install = Input::new()
-        .with_prompt("Install command")
-        .default(config.commands.install.clone())
-        .interact_text()?;
-
     // ── Web Dashboard ────────────────────────────────────────────────────
+    // Authentication is multi-user: the initial admin account is created on
+    // the dashboard's first-boot setup page, not configured here.
     section_header("Web Dashboard");
 
     config.web.port = Input::new()
         .with_prompt("Dashboard port")
         .default(config.web.port)
         .interact_text()?;
-
-    config.web.dashboard_username = Input::new()
-        .with_prompt("Dashboard username (empty = no auth)")
-        .default(config.web.dashboard_username.clone())
-        .allow_empty(true)
-        .interact_text()?;
-
-    if !config.web.dashboard_username.is_empty() {
-        config.web.dashboard_password = Input::new()
-            .with_prompt("Dashboard password")
-            .default(config.web.dashboard_password.clone())
-            .interact_text()?;
-    } else {
-        config.web.dashboard_password = String::new();
-    }
 
     // ── Jira ─────────────────────────────────────────────────────────────
     if config.general.ticketing_system == "jira" {
@@ -247,6 +164,42 @@ pub fn run() -> Result<()> {
             .interact_text()?;
     } else {
         config.jira = None;
+    }
+
+    // ── Database ───────────────────────────────────────────────────────────
+    // By default Maestro stores users/sessions in a local SQLite file. Point
+    // it at an external Postgres/MySQL/MariaDB here (or via the
+    // MAESTRO_DATABASE_CONNECTION env var in maestro.env).
+    if Confirm::new()
+        .with_prompt("Use an external database (Postgres / MySQL / MariaDB)?")
+        .default(config.database.is_some())
+        .interact()?
+    {
+        section_header("Database");
+        let existing_conn = config
+            .database
+            .as_ref()
+            .map(|d| d.connection.clone())
+            .unwrap_or_default();
+        let conn: String = Input::new()
+            .with_prompt("Connection URL (postgres://… | mysql://… | sqlite://…)")
+            .default(existing_conn)
+            .allow_empty(true)
+            .interact_text()?;
+        config.database = if conn.is_empty() {
+            None
+        } else {
+            Some(Database {
+                connection: conn,
+                max_connections: None,
+                acquire_timeout_secs: None,
+                idle_timeout_secs: None,
+                fail_fast: None,
+                import_from_sqlite: None,
+            })
+        };
+    } else {
+        config.database = None;
     }
 
     // ── Editor ───────────────────────────────────────────────────────────
@@ -320,34 +273,6 @@ pub fn run() -> Result<()> {
         network.allow_all_https = if allow_all { Some(true) } else { None };
     }
 
-    // ── Run Commands ─────────────────────────────────────────────────────
-    section_header("Run Commands");
-    if !config.run_commands.is_empty() {
-        println!("  Current run commands:");
-        for (i, cmd) in config.run_commands.iter().enumerate() {
-            println!("    {}. {} → {}", i + 1, style(&cmd.name).bold(), cmd.command);
-        }
-        println!();
-    }
-
-    loop {
-        if !Confirm::new()
-            .with_prompt("Add a run command?")
-            .default(config.run_commands.is_empty())
-            .interact()?
-        {
-            break;
-        }
-
-        let name: String = Input::new()
-            .with_prompt("  Command name")
-            .interact_text()?;
-        let command: String = Input::new()
-            .with_prompt("  Shell command")
-            .interact_text()?;
-        config.run_commands.push(RunCommand { name, command });
-    }
-
     // ── Write files ──────────────────────────────────────────────────────
     println!();
     section_header("Writing files");
@@ -388,13 +313,15 @@ pub fn run() -> Result<()> {
         "\n  {} Setup complete! Next steps:\n\
          \n    1. Run {} to authenticate with GitHub and your AI provider\
          \n    2. Run {} to start Maestro\
-         \n    3. Open {} in your browser\n",
+         \n    3. Open {} and create your admin account on the first-boot page\
+         \n    4. Clone your repository from the dashboard's {} button\n",
         style("✓").green().bold(),
         style("maestro auth").cyan().bold(),
         style("maestro start").cyan().bold(),
         style(format!("http://localhost:{}", config.web.port))
             .cyan()
             .underlined(),
+        style("Setup a New Project").bold(),
     );
 
     Ok(())
@@ -407,11 +334,7 @@ fn section_header(name: &str) {
 fn write_if_missing(dir: &Path, filename: &str, content: &str) -> Result<()> {
     let path = dir.join(filename);
     if path.exists() {
-        println!(
-            "  {} {} (already exists)",
-            style("skip").dim(),
-            filename
-        );
+        println!("  {} {} (already exists)", style("skip").dim(), filename);
     } else {
         fs::write(&path, content)?;
         println!("  {} {}", style("wrote").green(), filename);

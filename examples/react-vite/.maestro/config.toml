@@ -1,77 +1,80 @@
 # Maestro — React + Vite project preset
 #
-# Copy this file to your Maestro working directory as config.toml and edit
-# the values marked with ← to match your project.
-
-# ── Run commands (buttons on completed workflow cards) ─────────────────────
-[[run_commands]]
-name = "Dev Server"
-command = "npm run dev -- --host 0.0.0.0"
-
-[[run_commands]]
-name = "Storybook"
-command = "npx storybook dev -p 6006 --no-open"
-
-[[run_commands]]
-name = "Preview Build"
-command = "npm run build && npm run preview -- --host 0.0.0.0"
+# Copy this folder to your Maestro working directory and edit the values marked
+# with ← to match your project. Secrets go in maestro.env, never here.
+#
+# What moved to the dashboard (NOT in this file anymore):
+#   • Worktree init / install commands  → Configuration → Worktree Settings
+#   • Run/stop dev-server buttons        → Configuration → Worktree Settings
+#   • Dashboard login                    → create the admin account on first boot
+#   • Per-provider model details         → Configuration → AI Settings (seeded below)
+#   • Item-polling filters               → Configuration → Item Polling
+#   • Repository to work on              → dashboard "Setup a New Project" button
 
 # ── General ────────────────────────────────────────────────────────────────
 [general]
 ticketing_system = "github"            # ← "none", "github", or "jira"
+auto_polling = true
 poll_interval_secs = 60
 pr_merge_poll_interval_secs = 60
 max_concurrent_workflows = 1
-max_active_workflows = 0
+max_active_workflows = 0                # 0 = mirror max_concurrent_workflows
 log_level = "info"
-ticket_workflow_steps_file = "workflows/ticket.toml"
-review_workflow_steps_file = "workflows/review.toml"
-merge_base_workflow_steps_file = "workflows/merge_base.toml"
+# dry_mode = false                      # rehearse a workflow with no Jira/GitHub writes
 
-# ── Git ────────────────────────────────────────────────────────────────────
+# ── Git ──────────────────────────────────────────────────────────────────────
+# The repository itself is cloned from the dashboard ("Setup a New Project").
 [git]
 base_branch = "main"                   # ← your default branch
 remote = "origin"
-repo_url = "https://github.com/your-org/your-react-app.git"  # ← your repo
 repo_path = "/workspace"
 
-# ── Commands ───────────────────────────────────────────────────────────────
-[commands]
-install = "npm ci"
-pre_workflow = [
-  "npx -y skills add morphet81/cheat-sheets -a claude-code -a cursor --yes --skill '*' --global"
-]
-
 # ── Web dashboard ──────────────────────────────────────────────────────────
+# Multi-user: the initial admin account is created on the first-boot setup page.
 [web]
 host = "0.0.0.0"
 port = 8080
-dashboard_username = ""                # ← set both for login protection
-dashboard_password = ""
+# cors_origins = ["https://maestro.example.com"]   # set when behind a reverse proxy / TLS
+# cookie_secure = true
+# kick_other_sessions_on_login = true
 
-# ── AI agent ───────────────────────────────────────────────────────────────
+# ── AI agent (deploy-time defaults; edit in Configuration → AI Settings) ─────
 [agent]
-provider = "claude"                    # "claude" or "cursor"
+provider = "claude"                    # "claude", "cursor", "codex", or "opencode"
 step_timeout_secs = 1800
-model = ""                             # ← e.g. "claude-sonnet-4-6" or leave empty for default
+# share_conversation_across_steps = false
+# max_repeated_output_lines = 8
+
+[agent.providers.claude]
+# model = "claude-sonnet-4-6"          # ← empty/unset = automatic selection
+
+# Other providers (only the active one is used):
+# [agent.providers.cursor]
+# cli = "agent"
+# model = "Auto"
+# [agent.providers.opencode]
+# model = "qwen2.5-coder-7b-instruct"
+# base_url = "http://lm-studio:1234/v1"
 
 # ── Jira (only needed if ticketing_system = "jira") ────────────────────────
 [jira]
+site = ""                              # ← e.g. "yourcompany.atlassian.net"
+email = ""
 project_keys = []
 item_types = ["Task", "Bug"]
 done_status = "Done"
-site = ""
-email = ""
+# jql_filter = ""
 
-# ── Docker ─────────────────────────────────────────────────────────────────
-[docker]
-build_commands = []
-compose_up_commands = []
+# ── External database (optional) ─────────────────────────────────────────────
+# Default is local SQLite. Point at Postgres/MySQL/MariaDB to centralise auth
+# state. Can also be set via MAESTRO_DATABASE_CONNECTION in maestro.env.
+# [database]
+# connection = "postgres://maestro:s3cret@db.example:5432/maestro"
 
 # ── Editor ─────────────────────────────────────────────────────────────────
 [editor]
-# ports = [3000, 5173, 6006]           # Uncomment to pre-map known ports
 dynamic_ports = 10
+# ports = [3000, 5173, 6006]           # uncomment to pre-map known ports
 # theme = "One Dark Pro"
 # extensions = [
 #   "esbenp.prettier-vscode",
@@ -79,13 +82,13 @@ dynamic_ports = 10
 #   "bradlc.vscode-tailwindcss",
 # ]
 
-# ── Terminal ───────────────────────────────────────────────────────────────
-[terminal]
-# git_editor = "nano"
-# setup_commands = []
-# startup_commands = []
-
 # ── Network ────────────────────────────────────────────────────────────────
 [network]
 extra_egress_hosts = []
 # allow_all_https = false
+
+# ── Provisioning (admin-installed CLI tools, optional) ───────────────────────
+# [provisioning]
+# install_commands = [
+#   '[ -f "$MAESTRO_TOOLS_BIN/kubectl" ] || (curl -fsSLo "$MAESTRO_TOOLS_BIN/kubectl" https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl && chmod +x "$MAESTRO_TOOLS_BIN/kubectl")',
+# ]

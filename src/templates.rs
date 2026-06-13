@@ -7,7 +7,7 @@ pub const WORKFLOW_ADDRESS_PR_COMMENTS: &str =
 pub const MAESTRO_ENV: &str = include_str!("../examples/react-vite/.maestro/maestro.env");
 
 /// Docker Compose template for the CLI.
-/// Config files are read from `.maestro/` subdirectory.
+/// Config files are read from the `.maestro/` subdirectory.
 pub const DOCKER_COMPOSE: &str = r#"# Maestro — Docker Compose with workflow isolation (DinD sidecar)
 #
 # Usage:
@@ -18,6 +18,9 @@ pub const DOCKER_COMPOSE: &str = r#"# Maestro — Docker Compose with workflow i
 # Or manually:
 #   docker compose -f maestro.yml up -d
 #   docker compose -f maestro.yml run --rm -it maestro setup
+#
+# Multi-user: on first boot the dashboard prompts you to create the initial
+# admin account. There are no dashboard credentials in config.toml anymore.
 
 services:
   # ── Maestro application ──────────────────────────────────────────────────────
@@ -29,19 +32,26 @@ services:
     cap_add:
       - NET_ADMIN
     volumes:
-      # Configuration (required) — from .maestro/
-      - ./.maestro/config.toml:/etc/maestro/config.toml:ro
-      # Custom workflow steps (optional)
+      # Configuration (required) — mounted read-write so the dashboard's
+      # Configuration screens can persist changes back to the file.
+      - ./.maestro/config.toml:/etc/maestro/config.toml:rw
+      # Custom workflow definitions (optional) — *.toml discovered at startup
       - ./.maestro/workflows:/etc/maestro/workflows:ro
       # Environment variables / secrets (optional)
       - ./.maestro/maestro.env:/etc/maestro/env:ro
-      # Persistent state
+      # Persistent state: snapshots, maestro.db (users/sessions), secret.key
       - maestro-data:/home/maestro/.maestro
+      # Admin-provisioned tools ([provisioning].install_commands)
+      - maestro-tools:/opt/maestro-tools/bin
       - claude-auth:/home/maestro/.claude
       - cursor-auth:/home/maestro/.cursor
+      - agents-data:/home/maestro/.agents
       - gh-auth:/home/maestro/.config/gh
       - acli-auth:/home/maestro/.config/acli
-      # Workspace — your project is cloned here during setup
+      - fcli-auth:/home/maestro/.config/fcli
+      # Project repositories cloned via the dashboard "Setup a New Project" flow
+      - workspaces:/workspaces
+      # Legacy single-workspace mount (kept for backward compatibility)
       - workspace:/workspace
       # Caches
       - npm-cache:/home/maestro/.npm
@@ -54,6 +64,9 @@ services:
       - MAESTRO_HOME=/home/maestro
       - MAESTRO_DATA_DIR=/home/maestro/.maestro
       - CURSOR_CONFIG_DIR=/home/maestro/.cursor
+      # External database (optional): overrides [database].connection.
+      # Leave unset to use the local SQLite default at {data_dir}/maestro.db.
+      # - MAESTRO_DATABASE_CONNECTION=postgres://maestro:pw@db.example:5432/maestro
       # DinD connection
       - DOCKER_HOST=tcp://dind:2375
       - MAESTRO_DIND_PORT_OFFSET=100
@@ -79,13 +92,17 @@ services:
     environment:
       DOCKER_TLS_CERTDIR: ""
     volumes:
+      - workspaces:/workspaces
       - workspace:/workspace
       - dind-storage:/var/lib/docker
-      # Auth volumes shared with worker containers
+      # Auth + tools volumes shared with worker containers
+      - maestro-tools:/shared-auth/maestro-tools
       - claude-auth:/shared-auth/claude
       - cursor-auth:/shared-auth/cursor
+      - agents-data:/shared-auth/agents
       - gh-auth:/shared-auth/gh
       - acli-auth:/shared-auth/acli
+      - fcli-auth:/shared-auth/fcli
       - npm-cache:/shared-auth/npm
       - mise-data:/shared-auth/mise-data
       - mise-cache:/shared-auth/mise-cache
@@ -105,10 +122,14 @@ services:
 
 volumes:
   maestro-data:
+  maestro-tools:
   claude-auth:
   cursor-auth:
+  agents-data:
   gh-auth:
   acli-auth:
+  fcli-auth:
+  workspaces:
   workspace:
   npm-cache:
   mise-data:

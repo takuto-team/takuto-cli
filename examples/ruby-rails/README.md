@@ -4,21 +4,30 @@ Ready-to-use Maestro configuration for Ruby on Rails projects.
 
 ## What's included
 
-- `bundle install` as the install command
-- **Run commands**: Rails Server, Rails Console, Sidekiq
-- Claude Code skills from `morphet81/cheat-sheets` (installed before each workflow)
-- Ruby 3.3 auto-installed via mise on first editor open (cached across restarts)
-- Rails server binds to `0.0.0.0` for port forwarding to work
+- `config.toml` pre-set for a Rails project (Claude provider, GitHub Issues)
+- `maestro.yml` Docker Compose with the DinD workflow-isolation sidecar
+- `workflows/` — `implement_ticket`, `merge_base`, `address_pr_comments`
+- Ruby installed via mise on first editor open (cached across restarts)
 
 ## Setup
 
 ```bash
-cp .maestro/config.toml /path/to/your/maestro/.maestro/config.toml
+cp -r . /path/to/your/maestro-project && cd /path/to/your/maestro-project
 ```
 
-Edit the values marked with `←` (repo URL, branch, ticketing system).
+Edit the values marked with `←` in `.maestro/config.toml` (branch, ticketing
+system, Jira details). Then `maestro auth` and `maestro start`.
+
+## Configured from the dashboard (not in config.toml)
+
+- **Install / worktree-init commands** (e.g. `bundle install`) → Configuration → Worktree Settings
+- **Run-command buttons** (Rails Server, Console, Sidekiq) → Configuration → Worktree Settings
+- **Dashboard login** → create the admin account on the first-boot setup page
+- **Repository to work on** → dashboard "Setup a New Project" button
 
 ## Notes
 
-- If your project uses a `.ruby-version` or `.tool-versions` file, mise will use that version instead of 3.3.
-- For projects with a database, add your database host to `[network] extra_egress_hosts`.
+- If your project pins a Ruby version via `.ruby-version` or `.tool-versions`, mise uses that.
+- For projects with a database, add your database host to `[network] extra_egress_hosts`,
+  or run worktree-init steps from Configuration → Worktree Settings.
+- Configure the Rails server to bind `0.0.0.0` so port forwarding reaches it.
