@@ -41,7 +41,7 @@ Takuto Core is an AI coding pipeline that works at your pace: poll Jira or GitHu
 
 **Homebrew (macOS / Linux — recommended):**
 ```bash
-brew install takuto-team/takuto-cli/takuto
+brew install takuto-team/tap/takuto
 ```
 
 <details>
