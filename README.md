@@ -41,45 +41,45 @@ Takuto Core is an AI coding pipeline that works at your pace: poll Jira or GitHu
 
 **Homebrew (macOS / Linux — recommended):**
 ```bash
-brew install takuto-team/tools/takuto
+brew install takuto-team/takuto-cli/takuto
 ```
 
 <details>
 <summary>Manual install</summary>
 
-Download the latest binary for your platform from [Releases](https://github.com/takuto-team/takuto/releases/latest).
+Download the latest binary for your platform from [Releases](https://github.com/takuto-team/takuto-cli/releases/latest).
 
 **macOS (Apple Silicon):**
 ```bash
-curl -L -o takuto https://github.com/takuto-team/takuto/releases/latest/download/takuto-darwin-arm64
+curl -L -o takuto https://github.com/takuto-team/takuto-cli/releases/latest/download/takuto-darwin-arm64
 chmod +x takuto
 sudo mv takuto /usr/local/bin/
 ```
 
 **macOS (Intel):**
 ```bash
-curl -L -o takuto https://github.com/takuto-team/takuto/releases/latest/download/takuto-darwin-amd64
+curl -L -o takuto https://github.com/takuto-team/takuto-cli/releases/latest/download/takuto-darwin-amd64
 chmod +x takuto
 sudo mv takuto /usr/local/bin/
 ```
 
 **Linux (amd64):**
 ```bash
-curl -L -o takuto https://github.com/takuto-team/takuto/releases/latest/download/takuto-linux-amd64
+curl -L -o takuto https://github.com/takuto-team/takuto-cli/releases/latest/download/takuto-linux-amd64
 chmod +x takuto
 sudo mv takuto /usr/local/bin/
 ```
 
 **Linux (arm64):**
 ```bash
-curl -L -o takuto https://github.com/takuto-team/takuto/releases/latest/download/takuto-linux-arm64
+curl -L -o takuto https://github.com/takuto-team/takuto-cli/releases/latest/download/takuto-linux-arm64
 chmod +x takuto
 sudo mv takuto /usr/local/bin/
 ```
 
 **Windows:**
 
-Download [`takuto-windows-amd64.exe`](https://github.com/takuto-team/takuto/releases/latest/download/takuto-windows-amd64.exe) and add it to your `PATH`.
+Download [`takuto-windows-amd64.exe`](https://github.com/takuto-team/takuto-cli/releases/latest/download/takuto-windows-amd64.exe) and add it to your `PATH`.
 
 </details>
 

@@ -5,7 +5,7 @@ edition = "2021"
 description = "Interactive CLI for managing Takuto orchestration containers"
 publish = false
 license-file = "LICENSE"
-repository = "https://github.com/takuto-team/takuto"
+repository = "https://github.com/takuto-team/takuto-cli"
 
 [workspace]
 
