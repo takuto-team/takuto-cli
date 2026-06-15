@@ -93,7 +93,7 @@ You need **Docker** or **Podman** installed. The CLI auto-detects which one you 
 Pull the Takuto Core container image:
 
 ```bash
-docker pull ghcr.io/takuto-team/takuto:latest
+docker pull ghcr.io/takuto-team/takuto-core:latest
 ```
 
 > **Private registry authentication:** If the image is private, authenticate first:
@@ -540,7 +540,7 @@ podman run --rm -it \
   -e TAKUTO_DATA_DIR=/home/takuto/.takuto \
   -e CURSOR_CONFIG_DIR=/home/takuto/.cursor \
   -e NODE_OPTIONS=--dns-result-order=ipv4first \
-  ghcr.io/takuto-team/takuto:latest setup
+  ghcr.io/takuto-team/takuto-core:latest setup
 ```
 
 The `P=...` variable prefixes volume names with your directory name so each project

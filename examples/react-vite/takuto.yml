@@ -17,7 +17,7 @@ services:
   # ── Takuto application ──────────────────────────────────────────────────────
   takuto:
     container_name: takuto
-    image: ${TAKUTO_IMAGE:-ghcr.io/takuto-team/takuto:latest}
+    image: ${TAKUTO_IMAGE:-ghcr.io/takuto-team/takuto-core:latest}
     ports:
       - "8080:8080"
     cap_add:
