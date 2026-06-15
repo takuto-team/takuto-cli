@@ -7,7 +7,7 @@ use crate::runtime::Runtime;
 pub fn run(rt: &Runtime, local: bool) -> Result<()> {
     let cwd = std::env::current_dir()?;
     let compose_file = crate::find_compose_file(&cwd)
-        .ok_or_else(|| anyhow::anyhow!("No maestro.yml found. Run `maestro setup` first."))?;
+        .ok_or_else(|| anyhow::anyhow!("No takuto.yml found. Run `takuto setup` first."))?;
 
     let compose = rt
         .compose_command(&compose_file)
@@ -44,7 +44,7 @@ pub fn run(rt: &Runtime, local: bool) -> Result<()> {
     }
 
     println!(
-        "  {} Starting Maestro services...\n",
+        "  {} Starting Takuto services...\n",
         style("→").cyan().bold()
     );
 
@@ -52,7 +52,7 @@ pub fn run(rt: &Runtime, local: bool) -> Result<()> {
     up_cmd.args(&compose[1..]).args(["up", "-d"]);
     if local {
         up_cmd.args(["--pull=never"]);
-        up_cmd.env("MAESTRO_IMAGE", rt.image());
+        up_cmd.env("TAKUTO_IMAGE", rt.image());
     }
     let status = up_cmd
         .status()
@@ -63,7 +63,7 @@ pub fn run(rt: &Runtime, local: bool) -> Result<()> {
     }
 
     println!(
-        "\n  {} Maestro is running. Dashboard: {}\n",
+        "\n  {} Takuto is running. Dashboard: {}\n",
         style("✓").green().bold(),
         style("http://localhost:8080").cyan().underlined(),
     );

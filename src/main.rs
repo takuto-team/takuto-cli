@@ -9,7 +9,7 @@ use console::{style, Term};
 use std::path::{Path, PathBuf};
 
 #[derive(Parser)]
-#[command(name = "maestro", about = "Manage Maestro orchestration containers")]
+#[command(name = "takuto", about = "Manage Takuto orchestration containers")]
 struct Cli {
     /// Force Docker runtime (skip Podman detection)
     #[arg(long, global = true, conflicts_with = "podman")]
@@ -33,16 +33,16 @@ enum Commands {
     Setup,
     /// Run first-time authentication flow
     Auth,
-    /// Start Maestro services
+    /// Start Takuto services
     Start,
-    /// Stop Maestro services
+    /// Stop Takuto services
     Stop,
-    /// Restart Maestro services
+    /// Restart Takuto services
     Restart,
 }
 
-/// The `.maestro` subdirectory where config files live.
-pub const MAESTRO_DIR: &str = ".maestro";
+/// The `.takuto` subdirectory where config files live.
+pub const TAKUTO_DIR: &str = ".takuto";
 
 fn main() {
     if let Err(e) = run() {
@@ -91,39 +91,39 @@ fn run() -> Result<()> {
     Ok(())
 }
 
-/// Returns the path to the `.maestro` config directory within CWD.
-pub fn maestro_dir() -> PathBuf {
+/// Returns the path to the `.takuto` config directory within CWD.
+pub fn takuto_dir() -> PathBuf {
     std::env::current_dir()
         .unwrap_or_else(|_| PathBuf::from("."))
-        .join(MAESTRO_DIR)
+        .join(TAKUTO_DIR)
 }
 
-/// Find the Maestro compose file (`maestro.yml`).
+/// Find the Takuto compose file (`takuto.yml`).
 pub fn find_compose_file(cwd: &Path) -> Option<PathBuf> {
-    let maestro_yml = cwd.join("maestro.yml");
-    if maestro_yml.exists() {
-        return Some(maestro_yml);
+    let takuto_yml = cwd.join("takuto.yml");
+    if takuto_yml.exists() {
+        return Some(takuto_yml);
     }
     None
 }
 
 fn preflight_check() -> Result<()> {
     let cwd = std::env::current_dir()?;
-    let mdir = cwd.join(MAESTRO_DIR);
+    let mdir = cwd.join(TAKUTO_DIR);
 
     if !mdir.join("config.toml").exists() {
-        anyhow::bail!(".maestro/config.toml not found. Run `maestro setup` first.");
+        anyhow::bail!(".takuto/config.toml not found. Run `takuto setup` first.");
     }
-    // Create maestro.yml if missing
-    let compose_path = cwd.join("maestro.yml");
+    // Create takuto.yml if missing
+    let compose_path = cwd.join("takuto.yml");
     if !compose_path.exists() {
         std::fs::write(&compose_path, templates::DOCKER_COMPOSE)?;
     }
 
-    // Create maestro.env if missing (non-fatal)
-    let env_path = mdir.join("maestro.env");
+    // Create takuto.env if missing (non-fatal)
+    let env_path = mdir.join("takuto.env");
     if !env_path.exists() && mdir.exists() {
-        std::fs::write(&env_path, templates::MAESTRO_ENV)?;
+        std::fs::write(&env_path, templates::TAKUTO_ENV)?;
     }
 
     Ok(())

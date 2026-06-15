@@ -1,11 +1,11 @@
-# Maestro — Ruby on Rails project preset
+# Takuto — Rust project preset
 #
-# Copy this folder to your Maestro working directory and edit the values marked
-# with ← to match your project. Secrets go in maestro.env, never here.
+# Copy this folder to your Takuto working directory and edit the values marked
+# with ← to match your project. Secrets go in takuto.env, never here.
 #
 # What moved to the dashboard (NOT in this file anymore):
 #   • Worktree init / install commands  → Configuration → Worktree Settings
-#   • Run/stop dev-server buttons (Rails server, console, Sidekiq) → Worktree Settings
+#   • Run/stop dev-server buttons        → Configuration → Worktree Settings
 #   • Dashboard login                    → create the admin account on first boot
 #   • Per-provider model details         → Configuration → AI Settings (seeded below)
 #   • Item-polling filters               → Configuration → Item Polling
@@ -34,7 +34,7 @@ repo_path = "/workspace"
 [web]
 host = "0.0.0.0"
 port = 8080
-# cors_origins = ["https://maestro.example.com"]   # set when behind a reverse proxy / TLS
+# cors_origins = ["https://takuto.example.com"]   # set when behind a reverse proxy / TLS
 
 # ── AI agent (deploy-time defaults; edit in Configuration → AI Settings) ─────
 [agent]
@@ -54,17 +54,18 @@ done_status = "Done"
 
 # ── External database (optional) ─────────────────────────────────────────────
 # Default is local SQLite. Point at Postgres/MySQL/MariaDB to centralise auth
-# state. Can also be set via MAESTRO_DATABASE_CONNECTION in maestro.env.
+# state. Can also be set via TAKUTO_DATABASE_CONNECTION in takuto.env.
 # [database]
-# connection = "postgres://maestro:s3cret@db.example:5432/maestro"
+# connection = "postgres://takuto:s3cret@db.example:5432/takuto"
 
 # ── Editor ─────────────────────────────────────────────────────────────────
 [editor]
 dynamic_ports = 10
 # theme = "One Dark Pro"
 # extensions = [
-#   "Shopify.ruby-lsp",
-#   "kaiwood.endwise",
+#   "rust-lang.rust-analyzer",
+#   "tamasfe.even-better-toml",
+#   "vadimcn.vscode-lldb",
 # ]
 
 # ── Network ────────────────────────────────────────────────────────────────

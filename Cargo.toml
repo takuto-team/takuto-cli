@@ -1,11 +1,11 @@
 [package]
-name = "maestro"
+name = "takuto"
 version = "0.4.7"
 edition = "2021"
-description = "Interactive CLI for managing Maestro orchestration containers"
+description = "Interactive CLI for managing Takuto orchestration containers"
 publish = false
 license-file = "LICENSE"
-repository = "https://github.com/morphet81/maestro"
+repository = "https://github.com/takuto-team/takuto"
 
 [workspace]
 

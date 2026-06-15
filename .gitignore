@@ -1,7 +1,7 @@
 /target
 .DS_Store
-/.maestro/
-/maestro.yml
+/.takuto/
+/takuto.yml
 /docker-compose.yml
 .gitleaks.toml
 gitleak-report.json

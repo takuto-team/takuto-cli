@@ -7,7 +7,7 @@ use crate::runtime::Runtime;
 pub fn run(rt: &Runtime) -> Result<()> {
     let cwd = std::env::current_dir()?;
     let compose_file = crate::find_compose_file(&cwd)
-        .ok_or_else(|| anyhow::anyhow!("No maestro.yml found. Run `maestro setup` first."))?;
+        .ok_or_else(|| anyhow::anyhow!("No takuto.yml found. Run `takuto setup` first."))?;
 
     let compose = rt
         .compose_command(&compose_file)
@@ -18,7 +18,7 @@ pub fn run(rt: &Runtime) -> Result<()> {
         ))?;
 
     println!(
-        "\n  {} Stopping Maestro services...\n",
+        "\n  {} Stopping Takuto services...\n",
         style("→").cyan().bold()
     );
 
@@ -33,7 +33,7 @@ pub fn run(rt: &Runtime) -> Result<()> {
     }
 
     println!(
-        "\n  {} Maestro stopped.\n",
+        "\n  {} Takuto stopped.\n",
         style("✓").green().bold(),
     );
     Ok(())

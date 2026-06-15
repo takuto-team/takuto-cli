@@ -1,32 +1,32 @@
 pub const WORKFLOW_IMPLEMENT_TICKET: &str =
-    include_str!("../examples/react-vite/.maestro/workflows/implement_ticket.toml");
+    include_str!("../examples/react-vite/.takuto/workflows/implement_ticket.toml");
 pub const WORKFLOW_MERGE_BASE: &str =
-    include_str!("../examples/react-vite/.maestro/workflows/merge_base.toml");
+    include_str!("../examples/react-vite/.takuto/workflows/merge_base.toml");
 pub const WORKFLOW_ADDRESS_PR_COMMENTS: &str =
-    include_str!("../examples/react-vite/.maestro/workflows/address_pr_comments.toml");
-pub const MAESTRO_ENV: &str = include_str!("../examples/react-vite/.maestro/maestro.env");
+    include_str!("../examples/react-vite/.takuto/workflows/address_pr_comments.toml");
+pub const TAKUTO_ENV: &str = include_str!("../examples/react-vite/.takuto/takuto.env");
 
 /// Docker Compose template for the CLI.
-/// Config files are read from the `.maestro/` subdirectory.
-pub const DOCKER_COMPOSE: &str = r#"# Maestro — Docker Compose with workflow isolation (DinD sidecar)
+/// Config files are read from the `.takuto/` subdirectory.
+pub const DOCKER_COMPOSE: &str = r#"# Takuto — Docker Compose with workflow isolation (DinD sidecar)
 #
 # Usage:
-#   maestro start                # start services
-#   maestro auth                 # first-time auth
-#   maestro stop                 # stop services
+#   takuto start                # start services
+#   takuto auth                 # first-time auth
+#   takuto stop                 # stop services
 #
 # Or manually:
-#   docker compose -f maestro.yml up -d
-#   docker compose -f maestro.yml run --rm -it maestro setup
+#   docker compose -f takuto.yml up -d
+#   docker compose -f takuto.yml run --rm -it takuto setup
 #
 # Multi-user: on first boot the dashboard prompts you to create the initial
 # admin account. There are no dashboard credentials in config.toml anymore.
 
 services:
-  # ── Maestro application ──────────────────────────────────────────────────────
-  maestro:
-    container_name: maestro
-    image: ${MAESTRO_IMAGE:-ghcr.io/morphet81/maestro:latest}
+  # ── Takuto application ──────────────────────────────────────────────────────
+  takuto:
+    container_name: takuto
+    image: ${TAKUTO_IMAGE:-ghcr.io/takuto-team/takuto:latest}
     ports:
       - "8080:8080"
     cap_add:
@@ -34,42 +34,42 @@ services:
     volumes:
       # Configuration (required) — mounted read-write so the dashboard's
       # Configuration screens can persist changes back to the file.
-      - ./.maestro/config.toml:/etc/maestro/config.toml:rw
+      - ./.takuto/config.toml:/etc/takuto/config.toml:rw
       # Custom workflow definitions (optional) — *.toml discovered at startup
-      - ./.maestro/workflows:/etc/maestro/workflows:ro
+      - ./.takuto/workflows:/etc/takuto/workflows:ro
       # Environment variables / secrets (optional)
-      - ./.maestro/maestro.env:/etc/maestro/env:ro
-      # Persistent state: snapshots, maestro.db (users/sessions), secret.key
-      - maestro-data:/home/maestro/.maestro
+      - ./.takuto/takuto.env:/etc/takuto/env:ro
+      # Persistent state: snapshots, takuto.db (users/sessions), secret.key
+      - takuto-data:/home/takuto/.takuto
       # Admin-provisioned tools ([provisioning].install_commands)
-      - maestro-tools:/opt/maestro-tools/bin
-      - claude-auth:/home/maestro/.claude
-      - cursor-auth:/home/maestro/.cursor
-      - agents-data:/home/maestro/.agents
-      - gh-auth:/home/maestro/.config/gh
-      - acli-auth:/home/maestro/.config/acli
-      - fcli-auth:/home/maestro/.config/fcli
+      - takuto-tools:/opt/takuto-tools/bin
+      - claude-auth:/home/takuto/.claude
+      - cursor-auth:/home/takuto/.cursor
+      - agents-data:/home/takuto/.agents
+      - gh-auth:/home/takuto/.config/gh
+      - acli-auth:/home/takuto/.config/acli
+      - fcli-auth:/home/takuto/.config/fcli
       # Project repositories cloned via the dashboard "Setup a New Project" flow
       - workspaces:/workspaces
       # Legacy single-workspace mount (kept for backward compatibility)
       - workspace:/workspace
       # Caches
-      - npm-cache:/home/maestro/.npm
-      - mise-data:/home/maestro/.local/share/mise
-      - mise-cache:/home/maestro/.cache/mise
-      - aws-config:/home/maestro/.aws
-      - playwright-cache:/home/maestro/.cache/ms-playwright
+      - npm-cache:/home/takuto/.npm
+      - mise-data:/home/takuto/.local/share/mise
+      - mise-cache:/home/takuto/.cache/mise
+      - aws-config:/home/takuto/.aws
+      - playwright-cache:/home/takuto/.cache/ms-playwright
     environment:
-      - MAESTRO_CONFIG=/etc/maestro/config.toml
-      - MAESTRO_HOME=/home/maestro
-      - MAESTRO_DATA_DIR=/home/maestro/.maestro
-      - CURSOR_CONFIG_DIR=/home/maestro/.cursor
+      - TAKUTO_CONFIG=/etc/takuto/config.toml
+      - TAKUTO_HOME=/home/takuto
+      - TAKUTO_DATA_DIR=/home/takuto/.takuto
+      - CURSOR_CONFIG_DIR=/home/takuto/.cursor
       # External database (optional): overrides [database].connection.
-      # Leave unset to use the local SQLite default at {data_dir}/maestro.db.
-      # - MAESTRO_DATABASE_CONNECTION=postgres://maestro:pw@db.example:5432/maestro
+      # Leave unset to use the local SQLite default at {data_dir}/takuto.db.
+      # - TAKUTO_DATABASE_CONNECTION=postgres://takuto:pw@db.example:5432/takuto
       # DinD connection
       - DOCKER_HOST=tcp://dind:2375
-      - MAESTRO_DIND_PORT_OFFSET=100
+      - TAKUTO_DIND_PORT_OFFSET=100
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
@@ -83,7 +83,7 @@ services:
 
   # ── Docker-in-Docker sidecar (workflow isolation) ────────────────────────────
   dind:
-    container_name: maestro-dind
+    container_name: takuto-dind
     image: docker:27-dind
     privileged: true
     ports:
@@ -96,7 +96,7 @@ services:
       - workspace:/workspace
       - dind-storage:/var/lib/docker
       # Auth + tools volumes shared with worker containers
-      - maestro-tools:/shared-auth/maestro-tools
+      - takuto-tools:/shared-auth/takuto-tools
       - claude-auth:/shared-auth/claude
       - cursor-auth:/shared-auth/cursor
       - agents-data:/shared-auth/agents
@@ -110,9 +110,9 @@ services:
       - playwright-cache:/shared-auth/playwright-cache
       - vscode-data:/shared-auth/vscode
       # Config for worker egress rules
-      - ./.maestro/config.toml:/etc/maestro/config.toml:ro
-      - ./.maestro/workflows:/etc/maestro/workflows:ro
-      - ./.maestro/maestro.env:/etc/maestro/env:ro
+      - ./.takuto/config.toml:/etc/takuto/config.toml:ro
+      - ./.takuto/workflows:/etc/takuto/workflows:ro
+      - ./.takuto/takuto.env:/etc/takuto/env:ro
     healthcheck:
       test: ["CMD", "docker", "info"]
       interval: 5s
@@ -121,8 +121,8 @@ services:
       start_period: 5s
 
 volumes:
-  maestro-data:
-  maestro-tools:
+  takuto-data:
+  takuto-tools:
   claude-auth:
   cursor-auth:
   agents-data:

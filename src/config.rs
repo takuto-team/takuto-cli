@@ -1,16 +1,16 @@
 use serde::{Deserialize, Serialize};
 
-/// In-memory model of `.maestro/config.toml`.
+/// In-memory model of `.takuto/config.toml`.
 ///
-/// This mirrors the **bootstrap** surface of Maestro Core's config — the keys
+/// This mirrors the **bootstrap** surface of Takuto Core's config — the keys
 /// that must exist before the database and dashboard come up. Everything that
-/// Maestro Core now manages from the dashboard (worktree init commands, run/stop
+/// Takuto Core now manages from the dashboard (worktree init commands, run/stop
 /// buttons, per-provider model details, polling policy) is intentionally *not*
 /// modelled here: those live in the database and are edited from
 /// **Configuration → …** screens. The keys we still write are deploy-time
 /// defaults the UI can override.
 #[derive(Debug, Serialize, Deserialize)]
-pub struct MaestroConfig {
+pub struct TakutoConfig {
     #[serde(default)]
     pub general: General,
     #[serde(default)]
@@ -37,7 +37,7 @@ pub struct MaestroConfig {
     pub provisioning: Option<Provisioning>,
 }
 
-impl Default for MaestroConfig {
+impl Default for TakutoConfig {
     fn default() -> Self {
         Self {
             general: General::default(),
@@ -256,7 +256,7 @@ pub struct GitHubApp {
 }
 
 /// External database backend. Empty / omitted = local SQLite at
-/// `{data_dir}/maestro.db` (the zero-config default).
+/// `{data_dir}/takuto.db` (the zero-config default).
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Database {
     /// Connection URL. `sqlite://…`, `postgres://…`, or `mysql://…` (covers
@@ -323,8 +323,8 @@ pub struct Network {
     pub allow_all_https: Option<bool>,
 }
 
-/// Admin-installed CLI tools, layered onto the shared `maestro-tools` volume at
-/// startup (SHA-gated). See Maestro Core's `docs/extending-maestro.md`.
+/// Admin-installed CLI tools, layered onto the shared `takuto-tools` volume at
+/// startup (SHA-gated). See Takuto Core's `docs/extending-takuto.md`.
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Provisioning {
     #[serde(default)]
@@ -357,9 +357,9 @@ mod tests {
     /// A default config must serialize to valid TOML and parse back.
     #[test]
     fn default_round_trips() {
-        let cfg = MaestroConfig::default();
+        let cfg = TakutoConfig::default();
         let s = toml::to_string_pretty(&cfg).expect("serialize");
-        let back: MaestroConfig = toml::from_str(&s).expect("parse");
+        let back: TakutoConfig = toml::from_str(&s).expect("parse");
         assert_eq!(back.general.ticketing_system, "none");
         assert_eq!(back.web.port, 8080);
         assert_eq!(back.agent.provider, "claude");
@@ -369,10 +369,10 @@ mod tests {
     /// never be emitted after a nested table within the same parent).
     #[test]
     fn populated_round_trips() {
-        let mut cfg = MaestroConfig::default();
+        let mut cfg = TakutoConfig::default();
         cfg.general.dry_mode = true;
         cfg.general.poller_owner_username = "alice".into();
-        cfg.web.cors_origins = vec!["https://maestro.example.com".into()];
+        cfg.web.cors_origins = vec!["https://takuto.example.com".into()];
         cfg.web.cookie_secure = Some(true);
         cfg.agent.provider = "opencode".into();
         cfg.agent.share_conversation_across_steps = Some(true);
@@ -387,17 +387,17 @@ mod tests {
         });
         cfg.jira = Some(Jira {
             site: "x.atlassian.net".into(),
-            jql_filter: "labels = maestro".into(),
+            jql_filter: "labels = takuto".into(),
             ..Jira::default()
         });
         cfg.github = Some(GitHubApp {
             app_id: 1,
             app_installation_id: 2,
-            app_private_key_path: Some("/etc/maestro/key.pem".into()),
+            app_private_key_path: Some("/etc/takuto/key.pem".into()),
             app_private_key: None,
         });
         cfg.database = Some(Database {
-            connection: "postgres://maestro:pw@db:5432/maestro".into(),
+            connection: "postgres://takuto:pw@db:5432/takuto".into(),
             fail_fast: Some(true),
             max_connections: None,
             acquire_timeout_secs: None,
@@ -409,7 +409,7 @@ mod tests {
         });
 
         let s = toml::to_string_pretty(&cfg).expect("serialize");
-        let back: MaestroConfig = toml::from_str(&s).expect("parse");
+        let back: TakutoConfig = toml::from_str(&s).expect("parse");
         assert_eq!(back.agent.provider, "opencode");
         assert_eq!(
             back.agent
@@ -420,7 +420,7 @@ mod tests {
         );
         assert_eq!(
             back.database.map(|d| d.connection),
-            Some("postgres://maestro:pw@db:5432/maestro".into())
+            Some("postgres://takuto:pw@db:5432/takuto".into())
         );
     }
 
@@ -429,13 +429,13 @@ mod tests {
     fn example_presets_parse() {
         for preset in ["react-vite", "rust", "ruby-rails"] {
             let path = format!(
-                "{}/examples/{}/.maestro/config.toml",
+                "{}/examples/{}/.takuto/config.toml",
                 env!("CARGO_MANIFEST_DIR"),
                 preset
             );
             let content = std::fs::read_to_string(&path)
                 .unwrap_or_else(|e| panic!("read {path}: {e}"));
-            let _: MaestroConfig = toml::from_str(&content)
+            let _: TakutoConfig = toml::from_str(&content)
                 .unwrap_or_else(|e| panic!("parse {path}: {e}"));
         }
     }

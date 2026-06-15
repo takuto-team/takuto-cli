@@ -6,18 +6,18 @@ use std::path::Path;
 
 use crate::config::*;
 use crate::templates;
-use crate::MAESTRO_DIR;
+use crate::TAKUTO_DIR;
 
 pub fn run() -> Result<()> {
     println!(
         "\n{}",
-        style("  Maestro Setup Wizard  ").bold().on_cyan().black()
+        style("  Takuto Setup Wizard  ").bold().on_cyan().black()
     );
     println!();
 
-    // Ensure .maestro directory exists
+    // Ensure .takuto directory exists
     let cwd = std::env::current_dir()?;
-    let mdir = cwd.join(MAESTRO_DIR);
+    let mdir = cwd.join(TAKUTO_DIR);
     if !mdir.exists() {
         fs::create_dir_all(&mdir)?;
     }
@@ -27,12 +27,12 @@ pub fn run() -> Result<()> {
     let mut config = if config_path.exists() {
         let content = fs::read_to_string(&config_path)?;
         println!(
-            "  {} Loading existing .maestro/config.toml\n",
+            "  {} Loading existing .takuto/config.toml\n",
             style("✓").green().bold()
         );
-        toml::from_str::<MaestroConfig>(&content).unwrap_or_default()
+        toml::from_str::<TakutoConfig>(&content).unwrap_or_default()
     } else {
-        MaestroConfig::default()
+        TakutoConfig::default()
     };
 
     // ── Git ──────────────────────────────────────────────────────────────
@@ -115,7 +115,7 @@ pub fn run() -> Result<()> {
 
     // Model, endpoint, and other per-provider details (`[agent.providers.<name>]`)
     // are managed from the dashboard's Configuration → AI Settings — the wizard
-    // only sets the default provider so `maestro auth` knows which CLI to log in.
+    // only sets the default provider so `takuto auth` knows which CLI to log in.
 
     config.agent.step_timeout_secs = Input::new()
         .with_prompt("Step timeout (seconds)")
@@ -167,9 +167,9 @@ pub fn run() -> Result<()> {
     }
 
     // ── Database ───────────────────────────────────────────────────────────
-    // By default Maestro stores users/sessions in a local SQLite file. Point
+    // By default Takuto stores users/sessions in a local SQLite file. Point
     // it at an external Postgres/MySQL/MariaDB here (or via the
-    // MAESTRO_DATABASE_CONNECTION env var in maestro.env).
+    // TAKUTO_DATABASE_CONNECTION env var in takuto.env).
     if Confirm::new()
         .with_prompt("Use an external database (Postgres / MySQL / MariaDB)?")
         .default(config.database.is_some())
@@ -277,18 +277,18 @@ pub fn run() -> Result<()> {
     println!();
     section_header("Writing files");
 
-    // .maestro/config.toml
+    // .takuto/config.toml
     let toml_str = toml::to_string_pretty(&config)?;
     fs::write(&config_path, &toml_str)?;
-    println!("  {} .maestro/config.toml", style("wrote").green());
+    println!("  {} .takuto/config.toml", style("wrote").green());
 
-    // maestro.yml (at project root)
-    write_if_missing(&cwd, "maestro.yml", templates::DOCKER_COMPOSE)?;
+    // takuto.yml (at project root)
+    write_if_missing(&cwd, "takuto.yml", templates::DOCKER_COMPOSE)?;
 
-    // .maestro/maestro.env
-    write_if_missing(&mdir, "maestro.env", templates::MAESTRO_ENV)?;
+    // .takuto/takuto.env
+    write_if_missing(&mdir, "takuto.env", templates::TAKUTO_ENV)?;
 
-    // .maestro/workflows/
+    // .takuto/workflows/
     let workflows_dir = mdir.join("workflows");
     if !workflows_dir.exists() {
         fs::create_dir_all(&workflows_dir)?;
@@ -312,12 +312,12 @@ pub fn run() -> Result<()> {
     println!(
         "\n  {} Setup complete! Next steps:\n\
          \n    1. Run {} to authenticate with GitHub and your AI provider\
-         \n    2. Run {} to start Maestro\
+         \n    2. Run {} to start Takuto\
          \n    3. Open {} and create your admin account on the first-boot page\
          \n    4. Clone your repository from the dashboard's {} button\n",
         style("✓").green().bold(),
-        style("maestro auth").cyan().bold(),
-        style("maestro start").cyan().bold(),
+        style("takuto auth").cyan().bold(),
+        style("takuto start").cyan().bold(),
         style(format!("http://localhost:{}", config.web.port))
             .cyan()
             .underlined(),

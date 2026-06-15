@@ -67,7 +67,7 @@ impl Runtime {
     /// Always the published GHCR image — the `--local` flag controls
     /// *pull behaviour* (never pull), not the image name.
     pub fn image(&self) -> &'static str {
-        "ghcr.io/morphet81/maestro:latest"
+        "ghcr.io/takuto-team/takuto:latest"
     }
 }
 

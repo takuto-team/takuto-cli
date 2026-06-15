@@ -1,28 +1,28 @@
-# Maestro
+# Takuto
 
-**The companion CLI for [Maestro Core](https://github.com/morphet81/maestro-core) — set up and manage your AI coding pipeline in minutes.**
+**The companion CLI for [Takuto Core](https://github.com/takuto-team/takuto-core) — set up and manage your AI coding pipeline in minutes.**
 
-Maestro Core is an AI coding pipeline that works at your pace: poll Jira or GitHub Issues automatically, run the full pipeline overnight (branch → implement → review → test → PR), or stay in the driver's seat and trigger each phase manually from the dashboard. The `maestro` CLI takes care of the boring part — generating config files, orchestrating Docker Compose, and running auth flows — so you can focus on what matters.
+Takuto Core is an AI coding pipeline that works at your pace: poll Jira or GitHub Issues automatically, run the full pipeline overnight (branch → implement → review → test → PR), or stay in the driver's seat and trigger each phase manually from the dashboard. The `takuto` CLI takes care of the boring part — generating config files, orchestrating Docker Compose, and running auth flows — so you can focus on what matters.
 
 ---
 
 ## What you can achieve
 
-- **Fully automated mode** — connect Jira or GitHub Issues and Maestro polls automatically: it picks up "To Do" tickets, runs the full AI pipeline (worktree → install → implement → lint/tests → PR), and moves on to the next one.
+- **Fully automated mode** — connect Jira or GitHub Issues and Takuto polls automatically: it picks up "To Do" tickets, runs the full AI pipeline (worktree → install → implement → lint/tests → PR), and moves on to the next one.
 - **Manual mode, your pace** — add any ticket or task to the dashboard yourself, refine its description with AI assistance before the agent ever sees it, then trigger each workflow phase when you're ready.
 - **Mix both** — auto-pick routine tasks while manually curating the tricky ones.
 - **Run multiple tickets in parallel** — configure how many workflows run concurrently; each gets its own git worktree and isolated environment.
-- **Work as a team** — Maestro is multi-user: each person signs in to a shared dashboard and sees only their own workflows. Self-host on a server and point everyone at the same instance.
+- **Work as a team** — Takuto is multi-user: each person signs in to a shared dashboard and sees only their own workflows. Self-host on a server and point everyone at the same instance.
 - **Monitor everything in real time** — a live web dashboard streams terminal output per workflow, shows progress, and lets you pause, resume, retry, or inspect any run.
 - **Jump into any workflow** — open a browser-based VS Code editor and web terminal, pre-configured with your project tools, pointed at the exact worktree the agent is working on.
 - **Define your own pipeline steps** — TOML workflow definitions let you chain phases: implement → address PR comments → merge base branch. Steps depend on each other; trigger them from the dashboard.
-- **Work without a ticketing system** — paste any description via the dashboard and Maestro treats it as a workflow. No Jira account required.
+- **Work without a ticketing system** — paste any description via the dashboard and Takuto treats it as a workflow. No Jira account required.
 
 ---
 
-## Why Maestro?
+## Why Takuto?
 
-| | IDE assistant (Copilot, Cursor inline) | Maestro |
+| | IDE assistant (Copilot, Cursor inline) | Takuto |
 |---|---|---|
 | **Where it runs** | Inside your editor, on your machine | Inside Docker, on any machine or server |
 | **Supervision required** | Yes — you approve each step | Optional — fully autonomous or manual-trigger, your choice |
@@ -41,45 +41,45 @@ Maestro Core is an AI coding pipeline that works at your pace: poll Jira or GitH
 
 **Homebrew (macOS / Linux — recommended):**
 ```bash
-brew install morphet81/tools/maestro
+brew install takuto-team/tools/takuto
 ```
 
 <details>
 <summary>Manual install</summary>
 
-Download the latest binary for your platform from [Releases](https://github.com/morphet81/maestro/releases/latest).
+Download the latest binary for your platform from [Releases](https://github.com/takuto-team/takuto/releases/latest).
 
 **macOS (Apple Silicon):**
 ```bash
-curl -L -o maestro https://github.com/morphet81/maestro/releases/latest/download/maestro-darwin-arm64
-chmod +x maestro
-sudo mv maestro /usr/local/bin/
+curl -L -o takuto https://github.com/takuto-team/takuto/releases/latest/download/takuto-darwin-arm64
+chmod +x takuto
+sudo mv takuto /usr/local/bin/
 ```
 
 **macOS (Intel):**
 ```bash
-curl -L -o maestro https://github.com/morphet81/maestro/releases/latest/download/maestro-darwin-amd64
-chmod +x maestro
-sudo mv maestro /usr/local/bin/
+curl -L -o takuto https://github.com/takuto-team/takuto/releases/latest/download/takuto-darwin-amd64
+chmod +x takuto
+sudo mv takuto /usr/local/bin/
 ```
 
 **Linux (amd64):**
 ```bash
-curl -L -o maestro https://github.com/morphet81/maestro/releases/latest/download/maestro-linux-amd64
-chmod +x maestro
-sudo mv maestro /usr/local/bin/
+curl -L -o takuto https://github.com/takuto-team/takuto/releases/latest/download/takuto-linux-amd64
+chmod +x takuto
+sudo mv takuto /usr/local/bin/
 ```
 
 **Linux (arm64):**
 ```bash
-curl -L -o maestro https://github.com/morphet81/maestro/releases/latest/download/maestro-linux-arm64
-chmod +x maestro
-sudo mv maestro /usr/local/bin/
+curl -L -o takuto https://github.com/takuto-team/takuto/releases/latest/download/takuto-linux-arm64
+chmod +x takuto
+sudo mv takuto /usr/local/bin/
 ```
 
 **Windows:**
 
-Download [`maestro-windows-amd64.exe`](https://github.com/morphet81/maestro/releases/latest/download/maestro-windows-amd64.exe) and add it to your `PATH`.
+Download [`takuto-windows-amd64.exe`](https://github.com/takuto-team/takuto/releases/latest/download/takuto-windows-amd64.exe) and add it to your `PATH`.
 
 </details>
 
@@ -90,10 +90,10 @@ You need **Docker** or **Podman** installed. The CLI auto-detects which one you 
 - [Docker Desktop](https://docs.docker.com/get-docker/)
 - [Podman](https://podman.io/getting-started/installation)
 
-Pull the Maestro Core container image:
+Pull the Takuto Core container image:
 
 ```bash
-docker pull ghcr.io/morphet81/maestro:latest
+docker pull ghcr.io/takuto-team/takuto:latest
 ```
 
 > **Private registry authentication:** If the image is private, authenticate first:
@@ -108,17 +108,17 @@ Create a directory for your project and run the interactive setup wizard:
 
 ```bash
 mkdir my-project && cd my-project
-maestro setup
+takuto setup
 ```
 
 The wizard asks about ticketing system, AI provider/model, branch, ports, and (optionally) an external database, then generates all required files:
 
 ```
 my-project/
-  maestro.yml                      # Docker Compose orchestration (+ DinD sidecar)
-  .maestro/
+  takuto.yml                      # Docker Compose orchestration (+ DinD sidecar)
+  .takuto/
     config.toml                    # bootstrap configuration (mounted read-write)
-    maestro.env                    # secrets and API tokens
+    takuto.env                    # secrets and API tokens
     workflows/                     # pipeline definitions (auto-discovered)
       implement_ticket.toml
       merge_base.toml
@@ -132,7 +132,7 @@ my-project/
 ### 4. Authenticate
 
 ```bash
-maestro auth
+takuto auth
 ```
 
 This runs the first-time authentication flow inside the container:
@@ -140,38 +140,38 @@ This runs the first-time authentication flow inside the container:
 2. **Atlassian CLI** (`acli`) — only if you chose Jira
 3. **Claude Code** / **Cursor Agent** / **Codex** / **OpenCode** — your AI provider
 
-### 5. Start Maestro
+### 5. Start Takuto
 
 ```bash
-maestro start
+takuto start
 ```
 
 Open **http://localhost:8080** in your browser.
 
 ### 6. Create your admin account and add a repository
 
-Maestro is **multi-user**. On first boot the dashboard shows a setup page —
+Takuto is **multi-user**. On first boot the dashboard shows a setup page —
 the account you create there becomes the initial **admin**. Then:
 
-- Click **"Setup a New Project"** to clone the repository you want Maestro to work on.
+- Click **"Setup a New Project"** to clone the repository you want Takuto to work on.
 - If you configured Jira or GitHub Issues, polling starts automatically. Otherwise click **+** to paste a description and kick off a workflow manually.
 
 ### Other commands
 
 ```bash
-maestro stop       # stop Maestro services
-maestro restart    # restart Maestro services
+takuto stop       # stop Takuto services
+takuto restart    # restart Takuto services
 ```
 
 `--docker` / `--podman` force a runtime; `--local` uses a locally built image instead of pulling.
 
-> **Multi-project isolation:** Docker Compose automatically prefixes all volumes with the directory name (e.g., `my-app_claude-auth`, `my-app_workspaces`). To run Maestro for multiple projects simultaneously, use separate directories — each one gets fully isolated auth, workspaces, database, and caches with no configuration needed.
+> **Multi-project isolation:** Docker Compose automatically prefixes all volumes with the directory name (e.g., `my-app_claude-auth`, `my-app_workspaces`). To run Takuto for multiple projects simultaneously, use separate directories — each one gets fully isolated auth, workspaces, database, and caches with no configuration needed.
 
 ---
 
 ## What moved to the dashboard
 
-Maestro Core now stores per-user and per-workspace settings in a database and
+Takuto Core now stores per-user and per-workspace settings in a database and
 edits them from the dashboard's **Configuration** screens. These are **no
 longer in `config.toml`** — the CLI doesn't generate them, and if an old config
 still contains them they are ignored (with a startup warning):
@@ -193,46 +193,46 @@ back to it — the file stays the source of truth for bootstrap settings.
 
 ## Multi-user model
 
-Maestro is multi-user, single-tenant. Everyone shares one instance (and its
+Takuto is multi-user, single-tenant. Everyone shares one instance (and its
 Jira/GitHub/AI credentials) but each person has their own dashboard view.
 
 - **First boot:** when the database has zero users, the dashboard shows a setup page. The account you create becomes the initial **admin**.
 - **Roles:** `admin` can manage users and shared state (config, polling, workspace switch, repo clone); `user` sees and acts only on workflows they created.
-- **Sessions:** username + password (argon2-hashed in `maestro.db`). Idle TTL 24 h, absolute TTL 30 days. After 5 failed logins in 10 minutes the account locks (an admin unlocks it). One-time recovery codes are issued at account creation.
+- **Sessions:** username + password (argon2-hashed in `takuto.db`). Idle TTL 24 h, absolute TTL 30 days. After 5 failed logins in 10 minutes the account locks (an admin unlocks it). One-time recovery codes are issued at account creation.
 - **Poller ownership:** workflows created automatically by the Jira/GitHub poller are owned by `[general] poller_owner_username` (defaults to the first admin).
 
-User management lives at **Configuration → Users** (admin-only). Full details are in Maestro Core's [README](https://github.com/morphet81/maestro-core#multi-user-model).
+User management lives at **Configuration → Users** (admin-only). Full details are in Takuto Core's [README](https://github.com/takuto-team/takuto-core#multi-user-model).
 
 ---
 
 ## External database
 
-By default Maestro stores users, sessions, and snapshots in a local SQLite file
-inside the `maestro-data` volume — zero configuration. For team or
+By default Takuto stores users, sessions, and snapshots in a local SQLite file
+inside the `takuto-data` volume — zero configuration. For team or
 multi-instance deployments you can point it at an external **PostgreSQL**,
 **MySQL**, or **MariaDB**.
 
 Two ways to configure it:
 
-**In `.maestro/config.toml`:**
+**In `.takuto/config.toml`:**
 ```toml
 [database]
-connection = "postgres://maestro:s3cret@db.example:5432/maestro"
+connection = "postgres://takuto:s3cret@db.example:5432/takuto"
 # fail_fast = true          # abort startup if the DB is unreachable (default true)
-# import_from_sqlite = true # one-shot copy of an existing maestro.db on first boot (default true)
+# import_from_sqlite = true # one-shot copy of an existing takuto.db on first boot (default true)
 ```
 
-**Or via `.maestro/maestro.env`** (takes precedence; keeps the secret out of `config.toml`):
+**Or via `.takuto/takuto.env`** (takes precedence; keeps the secret out of `config.toml`):
 ```bash
-export MAESTRO_DATABASE_CONNECTION="postgres://maestro:s3cret@db.example:5432/maestro"
+export TAKUTO_DATABASE_CONNECTION="postgres://takuto:s3cret@db.example:5432/takuto"
 ```
 
 Supported schemes: `sqlite://…`, `postgres://…` (and `postgresql://…`),
 `mysql://…` (covers MariaDB). On first boot against an empty external database,
-Maestro copies an existing local `maestro.db` over and then skips the import on
+Takuto copies an existing local `takuto.db` over and then skips the import on
 subsequent restarts.
 
-> The database backend is **restart-only** — changing it requires `maestro restart`.
+> The database backend is **restart-only** — changing it requires `takuto restart`.
 > Make sure the database host is reachable from the container: add it to
 > `[network] extra_egress_hosts` (the egress firewall blocks unknown hosts), or
 > run the database as a service on the same Docker network.
@@ -241,9 +241,9 @@ subsequent restarts.
 
 ## Security
 
-> **⚠ Maestro runs AI agents autonomously and unattended.** Before going live, make sure the mitigations below are in place. A misconfigured setup can result in unreviewed code being pushed to protected branches or sensitive data being over-shared with the AI model.
+> **⚠ Takuto runs AI agents autonomously and unattended.** Before going live, make sure the mitigations below are in place. A misconfigured setup can result in unreviewed code being pushed to protected branches or sensitive data being over-shared with the AI model.
 
-**Security model:** Maestro does not maintain an engine-level allowlist for `gh` or `acli` calls by default. Security is delegated to the token permissions you configure — scope your tokens to the minimum required.
+**Security model:** Takuto does not maintain an engine-level allowlist for `gh` or `acli` calls by default. Security is delegated to the token permissions you configure — scope your tokens to the minimum required.
 
 ### Branch protection (required)
 
@@ -256,26 +256,26 @@ Without branch protection, a prompt-injection attack embedded in a ticket descri
 
 ### Scoped GitHub token (required)
 
-Use a **fine-grained personal access token** (PAT) scoped to the target repository instead of a classic token or your personal `gh` session. Grant only what Maestro needs:
+Use a **fine-grained personal access token** (PAT) scoped to the target repository instead of a classic token or your personal `gh` session. Grant only what Takuto needs:
 
 | Permission    | Access       | Used for                                                                                         |
 |---------------|--------------|--------------------------------------------------------------------------------------------------|
 | Contents      | Read & write | `git push` (branch push before `gh pr create`)                                                   |
 | Pull requests | Read & write | `gh pr create`, `gh pr edit --add-reviewer`, PR merge polling                                    |
 | Metadata      | Read         | Required base permission for all fine-grained tokens                                             |
-| Issues        | Read & write | Only if `ticketing_system = "github"` — Maestro polls issues and patches descriptions            |
+| Issues        | Read & write | Only if `ticketing_system = "github"` — Takuto polls issues and patches descriptions            |
 
 To use a PAT, pick one of two approaches:
 
-- **During `maestro auth`:** when prompted by the `gh` interactive login, paste the token.
-- **Via `maestro.env`:** add `export GH_TOKEN=<your-token>` — `gh` picks this up automatically, no interactive login needed.
+- **During `takuto auth`:** when prompted by the `gh` interactive login, paste the token.
+- **Via `takuto.env`:** add `export GH_TOKEN=<your-token>` — `gh` picks this up automatically, no interactive login needed.
 
 ### Scoped Jira tokens (required when using Jira)
 
 Use a dedicated Jira service account or a scoped API token, not your personal admin credentials:
 
 - Grant only **Browse Projects**, **Create Issues** (for comment/transition), and **Assign Issues** on the target project(s).
-- Rotate the token if Maestro's container or its volumes are ever compromised.
+- Rotate the token if Takuto's container or its volumes are ever compromised.
 
 ### Dashboard authentication
 
@@ -287,7 +287,7 @@ TLS in front of it and set `[web] cors_origins` (and, if needed, `cookie_secure`
 
 ### Prompt injection
 
-Ticket descriptions (Jira or GitHub Issues) are embedded in AI prompts. Treat them like user-supplied content: a malicious ticket could attempt to override agent instructions. Branch protection and scoped tokens are your main defence — they limit what a hijacked agent session can actually do. Maestro also adds explicit untrusted-content framing and optional `[jira]` byte caps.
+Ticket descriptions (Jira or GitHub Issues) are embedded in AI prompts. Treat them like user-supplied content: a malicious ticket could attempt to override agent instructions. Branch protection and scoped tokens are your main defence — they limit what a hijacked agent session can actually do. Takuto also adds explicit untrusted-content framing and optional `[jira]` byte caps.
 
 ---
 
@@ -295,8 +295,8 @@ Ticket descriptions (Jira or GitHub Issues) are embedded in AI prompts. Treat th
 
 `config.toml` holds **bootstrap** settings (needed before the dashboard and
 database exist). Everything else is edited from the dashboard. The canonical
-per-key reference lives in Maestro Core's
-[`docs/configuration.md`](https://github.com/morphet81/maestro-core/blob/main/docs/configuration.md).
+per-key reference lives in Takuto Core's
+[`docs/configuration.md`](https://github.com/takuto-team/takuto-core/blob/main/docs/configuration.md).
 
 ### Ticketing System
 
@@ -314,8 +314,8 @@ details go in `[agent.providers.<name>]` (and are editable from
 
 | Provider | Config | Setup |
 |----------|--------|-------|
-| **Claude Code** (default) | `provider = "claude"` | OAuth during `maestro auth`, or `ANTHROPIC_API_KEY` / `CLAUDE_CODE_OAUTH_TOKEN` in `maestro.env` |
-| **Cursor Agent** | `provider = "cursor"` | Interactive login during `maestro auth`, or `CURSOR_API_KEY` in `maestro.env` |
+| **Claude Code** (default) | `provider = "claude"` | OAuth during `takuto auth`, or `ANTHROPIC_API_KEY` / `CLAUDE_CODE_OAUTH_TOKEN` in `takuto.env` |
+| **Cursor Agent** | `provider = "cursor"` | Interactive login during `takuto auth`, or `CURSOR_API_KEY` in `takuto.env` |
 | **Codex** | `provider = "codex"` | OpenAI-compatible; configure model/endpoint under `[agent.providers.codex]` |
 | **OpenCode** | `provider = "opencode"` | Self-hosted / OpenAI-compatible (LM Studio, Ollama, vLLM…); set `model` and `base_url` under `[agent.providers.opencode]` |
 
@@ -329,13 +329,13 @@ step_timeout_secs = 1800
 ```
 
 > Running a model server on your **host machine** for OpenCode? Docker may block
-> the worker containers from reaching `host.docker.internal`. Maestro Core ships
+> the worker containers from reaching `host.docker.internal`. Takuto Core ships
 > a small bridge sidecar for that case — see its
-> [self-hosted model docs](https://github.com/morphet81/maestro-core/blob/main/docs/troubleshooting-self-hosted-models.md).
+> [self-hosted model docs](https://github.com/takuto-team/takuto-core/blob/main/docs/troubleshooting-self-hosted-models.md).
 
 ### Workflow Definitions
 
-Maestro Core discovers **every** `*.toml` file in the `workflows/` directory at
+Takuto Core discovers **every** `*.toml` file in the `workflows/` directory at
 startup — there are no per-file config keys anymore. The wizard generates three
 ready-to-use definitions:
 
@@ -388,7 +388,7 @@ app_private_key = """
 -----END RSA PRIVATE KEY-----
 """
 # …or a path to a PEM file:
-# app_private_key_path = "/etc/maestro/github-app-key.pem"
+# app_private_key_path = "/etc/takuto/github-app-key.pem"
 ```
 
 Required App permissions: contents (write), pull_requests (write), metadata (read).
@@ -402,15 +402,15 @@ SHA-gated, so unchanged lists are a no-op:
 ```toml
 [provisioning]
 install_commands = [
-  '[ -f "$MAESTRO_TOOLS_BIN/kubectl" ] || (curl -fsSLo "$MAESTRO_TOOLS_BIN/kubectl" https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl && chmod +x "$MAESTRO_TOOLS_BIN/kubectl")',
+  '[ -f "$TAKUTO_TOOLS_BIN/kubectl" ] || (curl -fsSLo "$TAKUTO_TOOLS_BIN/kubectl" https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl && chmod +x "$TAKUTO_TOOLS_BIN/kubectl")',
 ]
 ```
 
-See Maestro Core's [`docs/extending-maestro.md`](https://github.com/morphet81/maestro-core/blob/main/docs/extending-maestro.md) for the full model.
+See Takuto Core's [`docs/extending-takuto.md`](https://github.com/takuto-team/takuto-core/blob/main/docs/extending-takuto.md) for the full model.
 
 ### Environment Variables
 
-Secrets and API tokens go in `maestro.env` (mounted at `/etc/maestro/env`). Only `export VAR=value` lines are honoured:
+Secrets and API tokens go in `takuto.env` (mounted at `/etc/takuto/env`). Only `export VAR=value` lines are honoured:
 
 ```bash
 # Claude Code (skip interactive login)
@@ -427,7 +427,7 @@ export GH_TOKEN=github_pat_...
 export ANTHROPIC_BASE_URL=https://custom-proxy.example.com/claude
 
 # External database (alternative to [database].connection)
-export MAESTRO_DATABASE_CONNECTION=postgres://maestro:pw@db.example:5432/maestro
+export TAKUTO_DATABASE_CONNECTION=postgres://takuto:pw@db.example:5432/takuto
 
 # Figma integration
 export FIGMA_API_TOKEN=...
@@ -483,7 +483,7 @@ Install commands and run-command buttons are configured from the dashboard
 
 ## Manual Setup (without the CLI)
 
-If you prefer not to use the `maestro` CLI, you can set up everything manually.
+If you prefer not to use the `takuto` CLI, you can set up everything manually.
 
 ### 1. Pick a preset and copy it
 
@@ -491,7 +491,7 @@ If you prefer not to use the `maestro` CLI, you can set up everything manually.
 cp -r examples/react-vite/ my-project && cd my-project
 ```
 
-### 2. Edit .maestro/config.toml
+### 2. Edit .takuto/config.toml
 
 Configure at minimum the ticketing system and your base branch:
 
@@ -510,52 +510,52 @@ Repositories are cloned from the dashboard, and install commands live in
 
 **Docker:**
 ```bash
-docker compose -f maestro.yml run --rm -it maestro setup
+docker compose -f takuto.yml run --rm -it takuto setup
 ```
 
 **Podman:**
 ```bash
-touch .maestro/maestro.env
+touch .takuto/takuto.env
 P=$(basename "$(pwd)")
 
 podman run --rm -it \
   --security-opt=label=disable \
-  -v "$(pwd)/.maestro/config.toml":/etc/maestro/config.toml:rw \
-  -v "$(pwd)/.maestro/workflows":/etc/maestro/workflows:ro \
-  -v "$(pwd)/.maestro/maestro.env":/etc/maestro/env:ro \
-  -v "${P}_maestro-data":/home/maestro/.maestro \
-  -v "${P}_claude-auth":/home/maestro/.claude \
-  -v "${P}_cursor-auth":/home/maestro/.cursor \
-  -v "${P}_agents-data":/home/maestro/.agents \
-  -v "${P}_gh-auth":/home/maestro/.config/gh \
-  -v "${P}_acli-auth":/home/maestro/.config/acli \
-  -v "${P}_fcli-auth":/home/maestro/.config/fcli \
+  -v "$(pwd)/.takuto/config.toml":/etc/takuto/config.toml:rw \
+  -v "$(pwd)/.takuto/workflows":/etc/takuto/workflows:ro \
+  -v "$(pwd)/.takuto/takuto.env":/etc/takuto/env:ro \
+  -v "${P}_takuto-data":/home/takuto/.takuto \
+  -v "${P}_claude-auth":/home/takuto/.claude \
+  -v "${P}_cursor-auth":/home/takuto/.cursor \
+  -v "${P}_agents-data":/home/takuto/.agents \
+  -v "${P}_gh-auth":/home/takuto/.config/gh \
+  -v "${P}_acli-auth":/home/takuto/.config/acli \
+  -v "${P}_fcli-auth":/home/takuto/.config/fcli \
   -v "${P}_workspaces":/workspaces \
   -v "${P}_workspace":/workspace \
-  -v "${P}_npm-cache":/home/maestro/.npm \
-  -v "${P}_mise-data":/home/maestro/.local/share/mise \
-  -v "${P}_mise-cache":/home/maestro/.cache/mise \
-  -e MAESTRO_CONFIG=/etc/maestro/config.toml \
-  -e MAESTRO_HOME=/home/maestro \
-  -e MAESTRO_DATA_DIR=/home/maestro/.maestro \
-  -e CURSOR_CONFIG_DIR=/home/maestro/.cursor \
+  -v "${P}_npm-cache":/home/takuto/.npm \
+  -v "${P}_mise-data":/home/takuto/.local/share/mise \
+  -v "${P}_mise-cache":/home/takuto/.cache/mise \
+  -e TAKUTO_CONFIG=/etc/takuto/config.toml \
+  -e TAKUTO_HOME=/home/takuto \
+  -e TAKUTO_DATA_DIR=/home/takuto/.takuto \
+  -e CURSOR_CONFIG_DIR=/home/takuto/.cursor \
   -e NODE_OPTIONS=--dns-result-order=ipv4first \
-  ghcr.io/morphet81/maestro:latest setup
+  ghcr.io/takuto-team/takuto:latest setup
 ```
 
 The `P=...` variable prefixes volume names with your directory name so each project
 is isolated — matching what Docker Compose does automatically.
 
-### 4. Start Maestro
+### 4. Start Takuto
 
 **Docker:**
 ```bash
-docker compose -f maestro.yml up -d
+docker compose -f takuto.yml up -d
 ```
 
 **Podman:**
 ```bash
-podman compose -f maestro.yml up -d
+podman compose -f takuto.yml up -d
 ```
 
 Open **http://localhost:8080**, create your admin account on the first-boot page, then clone a repository via **"Setup a New Project"**.
@@ -572,37 +572,37 @@ Your npm registry is blocked by egress rules. Add the registry domain to `[netwo
 
 Auth is stored in Docker volumes. If volumes were deleted, re-run:
 ```bash
-maestro auth
+takuto auth
 ```
 
 ### Can't reach an external database
 
 The egress firewall blocks unknown hosts. Add the database host to
 `[network] extra_egress_hosts`, or run it as a service on the same Docker
-network. Changing the backend requires `maestro restart`.
+network. Changing the backend requires `takuto restart`.
 
 ### Cursor agent login fails
 
-Rebuild the Maestro Core image — you may be on an outdated layer:
+Rebuild the Takuto Core image — you may be on an outdated layer:
 ```bash
-docker compose -f maestro.yml build --no-cache
+docker compose -f takuto.yml build --no-cache
 ```
 
-Or set `CURSOR_API_KEY` in `maestro.env` to skip interactive auth.
+Or set `CURSOR_API_KEY` in `takuto.env` to skip interactive auth.
 
-### `maestro start` stalls after "Egress rules applied"
+### `takuto start` stalls after "Egress rules applied"
 
-Auth preflight is running. For Cursor, set `CURSOR_API_KEY` in `maestro.env` to skip interactive auth checks.
+Auth preflight is running. For Cursor, set `CURSOR_API_KEY` in `takuto.env` to skip interactive auth checks.
 
 ### Podman on Linux with SELinux
 
-Add `:z` or `:Z` to volume mounts, or set `security_opt: [label=disable]` in `maestro.yml`.
+Add `:z` or `:Z` to volume mounts, or set `security_opt: [label=disable]` in `takuto.yml`.
 
 ---
 
 ## Source & License
 
-This repository contains the Maestro CLI utility, licensed under [MIT](LICENSE).
+This repository contains the Takuto CLI utility, licensed under [MIT](LICENSE).
 
-The Maestro Core application is open source under [AGPL v3](https://github.com/morphet81/maestro-core/blob/main/LICENSE).
-Source code is available at [github.com/morphet81/maestro-core](https://github.com/morphet81/maestro-core).
+The Takuto Core application is open source under [AGPL v3](https://github.com/takuto-team/takuto-core/blob/main/LICENSE).
+Source code is available at [github.com/takuto-team/takuto-core](https://github.com/takuto-team/takuto-core).

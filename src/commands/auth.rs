@@ -3,7 +3,7 @@ use console::style;
 use std::process::Command;
 
 use crate::runtime::Runtime;
-use crate::MAESTRO_DIR;
+use crate::TAKUTO_DIR;
 
 /// Normalize a directory name into a Compose project name.
 /// Docker/Podman Compose lowercase the directory name and keep only
@@ -14,7 +14,7 @@ fn compose_project_name() -> Result<String> {
     let dir = cwd
         .file_name()
         .map(|n| n.to_string_lossy().to_string())
-        .unwrap_or_else(|| "maestro".to_string());
+        .unwrap_or_else(|| "takuto".to_string());
 
     let normalized: String = dir
         .to_lowercase()
@@ -23,7 +23,7 @@ fn compose_project_name() -> Result<String> {
         .collect();
 
     Ok(if normalized.is_empty() {
-        "maestro".to_string()
+        "takuto".to_string()
     } else {
         normalized
     })
@@ -37,7 +37,7 @@ pub fn run(rt: &Runtime, local: bool) -> Result<()> {
 
     let cwd = std::env::current_dir().context("Failed to get current directory")?;
     let compose_file = crate::find_compose_file(&cwd)
-        .ok_or_else(|| anyhow::anyhow!("No maestro.yml found. Run `maestro setup` first."))?;
+        .ok_or_else(|| anyhow::anyhow!("No takuto.yml found. Run `takuto setup` first."))?;
 
     let status = match rt {
         Runtime::Docker { compose } => {
@@ -49,7 +49,7 @@ pub fn run(rt: &Runtime, local: bool) -> Result<()> {
                     if local {
                         args.push("--pull=never");
                     }
-                    args.extend(["maestro", "setup"]);
+                    args.extend(["takuto", "setup"]);
                     c.args(&args);
                     c
                 }
@@ -59,19 +59,19 @@ pub fn run(rt: &Runtime, local: bool) -> Result<()> {
                     if local {
                         args.push("--pull=never");
                     }
-                    args.extend(["maestro", "setup"]);
+                    args.extend(["takuto", "setup"]);
                     c.args(&args);
                     c
                 }
             };
             if local {
-                cmd.env("MAESTRO_IMAGE", rt.image());
+                cmd.env("TAKUTO_IMAGE", rt.image());
             }
             cmd.status().context("Failed to run docker compose")?
         }
         Runtime::Podman { .. } => {
             // Podman compose doesn't support -it, use raw podman run
-            let mdir = cwd.join(MAESTRO_DIR);
+            let mdir = cwd.join(TAKUTO_DIR);
             let p = compose_project_name()?;
 
             let mut cmd = Command::new("podman");
@@ -81,49 +81,49 @@ pub fn run(rt: &Runtime, local: bool) -> Result<()> {
             }
             cmd.args(["--security-opt=label=disable"]);
 
-            // Config mounts from .maestro/ (config is read-write so the
+            // Config mounts from .takuto/ (config is read-write so the
             // setup flow can persist changes back to the file)
             cmd.args([
                 "-v",
                 &format!(
-                    "{}:/etc/maestro/config.toml:rw",
+                    "{}:/etc/takuto/config.toml:rw",
                     mdir.join("config.toml").display()
                 ),
             ]);
             cmd.args([
                 "-v",
                 &format!(
-                    "{}:/etc/maestro/workflows:ro",
+                    "{}:/etc/takuto/workflows:ro",
                     mdir.join("workflows").display()
                 ),
             ]);
             cmd.args([
                 "-v",
-                &format!("{}:/etc/maestro/env:ro", mdir.join("maestro.env").display()),
+                &format!("{}:/etc/takuto/env:ro", mdir.join("takuto.env").display()),
             ]);
 
             // Named volumes (project-isolated, matching Compose naming)
-            cmd.args(["-v", &format!("{p}_maestro-data:/home/maestro/.maestro")]);
-            cmd.args(["-v", &format!("{p}_claude-auth:/home/maestro/.claude")]);
-            cmd.args(["-v", &format!("{p}_cursor-auth:/home/maestro/.cursor")]);
-            cmd.args(["-v", &format!("{p}_agents-data:/home/maestro/.agents")]);
-            cmd.args(["-v", &format!("{p}_gh-auth:/home/maestro/.config/gh")]);
-            cmd.args(["-v", &format!("{p}_acli-auth:/home/maestro/.config/acli")]);
-            cmd.args(["-v", &format!("{p}_fcli-auth:/home/maestro/.config/fcli")]);
+            cmd.args(["-v", &format!("{p}_takuto-data:/home/takuto/.takuto")]);
+            cmd.args(["-v", &format!("{p}_claude-auth:/home/takuto/.claude")]);
+            cmd.args(["-v", &format!("{p}_cursor-auth:/home/takuto/.cursor")]);
+            cmd.args(["-v", &format!("{p}_agents-data:/home/takuto/.agents")]);
+            cmd.args(["-v", &format!("{p}_gh-auth:/home/takuto/.config/gh")]);
+            cmd.args(["-v", &format!("{p}_acli-auth:/home/takuto/.config/acli")]);
+            cmd.args(["-v", &format!("{p}_fcli-auth:/home/takuto/.config/fcli")]);
             cmd.args(["-v", &format!("{p}_workspaces:/workspaces")]);
             cmd.args(["-v", &format!("{p}_workspace:/workspace")]);
-            cmd.args(["-v", &format!("{p}_npm-cache:/home/maestro/.npm")]);
+            cmd.args(["-v", &format!("{p}_npm-cache:/home/takuto/.npm")]);
             cmd.args([
                 "-v",
-                &format!("{p}_mise-data:/home/maestro/.local/share/mise"),
+                &format!("{p}_mise-data:/home/takuto/.local/share/mise"),
             ]);
-            cmd.args(["-v", &format!("{p}_mise-cache:/home/maestro/.cache/mise")]);
+            cmd.args(["-v", &format!("{p}_mise-cache:/home/takuto/.cache/mise")]);
 
             // Environment
-            cmd.args(["-e", "MAESTRO_CONFIG=/etc/maestro/config.toml"]);
-            cmd.args(["-e", "MAESTRO_HOME=/home/maestro"]);
-            cmd.args(["-e", "MAESTRO_DATA_DIR=/home/maestro/.maestro"]);
-            cmd.args(["-e", "CURSOR_CONFIG_DIR=/home/maestro/.cursor"]);
+            cmd.args(["-e", "TAKUTO_CONFIG=/etc/takuto/config.toml"]);
+            cmd.args(["-e", "TAKUTO_HOME=/home/takuto"]);
+            cmd.args(["-e", "TAKUTO_DATA_DIR=/home/takuto/.takuto"]);
+            cmd.args(["-e", "CURSOR_CONFIG_DIR=/home/takuto/.cursor"]);
             cmd.args(["-e", "NODE_OPTIONS=--dns-result-order=ipv4first"]);
 
             // Image + command

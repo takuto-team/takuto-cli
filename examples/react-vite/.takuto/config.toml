@@ -1,7 +1,7 @@
-# Maestro — Rust project preset
+# Takuto — React + Vite project preset
 #
-# Copy this folder to your Maestro working directory and edit the values marked
-# with ← to match your project. Secrets go in maestro.env, never here.
+# Copy this folder to your Takuto working directory and edit the values marked
+# with ← to match your project. Secrets go in takuto.env, never here.
 #
 # What moved to the dashboard (NOT in this file anymore):
 #   • Worktree init / install commands  → Configuration → Worktree Settings
@@ -34,15 +34,27 @@ repo_path = "/workspace"
 [web]
 host = "0.0.0.0"
 port = 8080
-# cors_origins = ["https://maestro.example.com"]   # set when behind a reverse proxy / TLS
+# cors_origins = ["https://takuto.example.com"]   # set when behind a reverse proxy / TLS
+# cookie_secure = true
+# kick_other_sessions_on_login = true
 
 # ── AI agent (deploy-time defaults; edit in Configuration → AI Settings) ─────
 [agent]
 provider = "claude"                    # "claude", "cursor", "codex", or "opencode"
 step_timeout_secs = 1800
+# share_conversation_across_steps = false
+# max_repeated_output_lines = 8
 
 [agent.providers.claude]
 # model = "claude-sonnet-4-6"          # ← empty/unset = automatic selection
+
+# Other providers (only the active one is used):
+# [agent.providers.cursor]
+# cli = "agent"
+# model = "Auto"
+# [agent.providers.opencode]
+# model = "qwen2.5-coder-7b-instruct"
+# base_url = "http://lm-studio:1234/v1"
 
 # ── Jira (only needed if ticketing_system = "jira") ────────────────────────
 [jira]
@@ -51,24 +63,32 @@ email = ""
 project_keys = []
 item_types = ["Task", "Bug"]
 done_status = "Done"
+# jql_filter = ""
 
 # ── External database (optional) ─────────────────────────────────────────────
 # Default is local SQLite. Point at Postgres/MySQL/MariaDB to centralise auth
-# state. Can also be set via MAESTRO_DATABASE_CONNECTION in maestro.env.
+# state. Can also be set via TAKUTO_DATABASE_CONNECTION in takuto.env.
 # [database]
-# connection = "postgres://maestro:s3cret@db.example:5432/maestro"
+# connection = "postgres://takuto:s3cret@db.example:5432/takuto"
 
 # ── Editor ─────────────────────────────────────────────────────────────────
 [editor]
 dynamic_ports = 10
+# ports = [3000, 5173, 6006]           # uncomment to pre-map known ports
 # theme = "One Dark Pro"
 # extensions = [
-#   "rust-lang.rust-analyzer",
-#   "tamasfe.even-better-toml",
-#   "vadimcn.vscode-lldb",
+#   "esbenp.prettier-vscode",
+#   "dbaeumer.vscode-eslint",
+#   "bradlc.vscode-tailwindcss",
 # ]
 
 # ── Network ────────────────────────────────────────────────────────────────
 [network]
 extra_egress_hosts = []
 # allow_all_https = false
+
+# ── Provisioning (admin-installed CLI tools, optional) ───────────────────────
+# [provisioning]
+# install_commands = [
+#   '[ -f "$TAKUTO_TOOLS_BIN/kubectl" ] || (curl -fsSLo "$TAKUTO_TOOLS_BIN/kubectl" https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl && chmod +x "$TAKUTO_TOOLS_BIN/kubectl")',
+# ]
