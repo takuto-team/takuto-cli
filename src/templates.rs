@@ -27,10 +27,14 @@ services:
   takuto:
     container_name: takuto
     image: ${TAKUTO_IMAGE:-ghcr.io/takuto-team/takuto-core:latest}
-    ports:
-      - "8080:8080"
-    cap_add:
-      - NET_ADMIN
+    # Share the DinD network namespace so the dashboard's reverse proxy can
+    # reach editor/terminal containers (bound on docker-proxy ports inside
+    # DinD) over localhost — without this, opening the editor/terminal fails
+    # with "upstream unavailable". The dashboard port 8080 is therefore
+    # published on the `dind` service below, not here. takuto runs no egress
+    # rules of its own (NET_ADMIN dropped) — workers apply egress in their
+    # own network namespace.
+    network_mode: "service:dind"
     volumes:
       # Configuration (required) — mounted read-write so the dashboard's
       # Configuration screens can persist changes back to the file.
@@ -67,9 +71,11 @@ services:
       # External database (optional): overrides [database].connection.
       # Leave unset to use the local SQLite default at {data_dir}/takuto.db.
       # - TAKUTO_DATABASE_CONNECTION=postgres://takuto:pw@db.example:5432/takuto
-      # DinD connection
-      - DOCKER_HOST=tcp://dind:2375
-      - TAKUTO_DIND_PORT_OFFSET=100
+      # DinD connection — over localhost because takuto shares DinD's netns.
+      - DOCKER_HOST=tcp://127.0.0.1:2375
+      # DinD-side mount prefix of the takuto-data volume, for the per-workflow
+      # secrets-bundle path translation.
+      - TAKUTO_DIND_DATA_PREFIX=/shared-auth/takuto-data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
@@ -87,8 +93,11 @@ services:
     image: docker:27-dind
     privileged: true
     ports:
-      # Worker/editor ports — offset by 100 to avoid conflicts
-      - "9200-9300:9100-9200"
+      # Takuto's dashboard — published here because the takuto service shares
+      # this network namespace (network_mode: service:dind). Editor/terminal
+      # are reached through the dashboard's /s/<token> proxy on this port, so
+      # no separate worker/editor port range needs publishing.
+      - "${TAKUTO_PORT:-8080}:8080"
     environment:
       DOCKER_TLS_CERTDIR: ""
     volumes:
