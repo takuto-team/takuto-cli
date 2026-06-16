@@ -96,7 +96,7 @@ pub fn run() -> Result<()> {
                 .network
                 .as_ref()
                 .and_then(|n| n.allow_all_https)
-                .unwrap_or(false),
+                .unwrap_or(true),
         )
         .interact()?;
     if allow_all_https {
@@ -106,6 +106,40 @@ pub fn run() -> Result<()> {
             .allow_all_https = Some(true);
     } else if let Some(network) = config.network.as_mut() {
         network.allow_all_https = None;
+    }
+
+    // Whitelist additional egress domains beyond the defaults.
+    if Confirm::new()
+        .with_prompt("Whitelist additional egress domains?")
+        .default(
+            config
+                .network
+                .as_ref()
+                .map(|n| !n.extra_egress_hosts.is_empty())
+                .unwrap_or(false),
+        )
+        .interact()?
+    {
+        let existing = config
+            .network
+            .as_ref()
+            .map(|n| n.extra_egress_hosts.join(", "))
+            .unwrap_or_default();
+        let hosts_str: String = Input::new()
+            .with_prompt("Egress domains (comma-separated)")
+            .default(existing)
+            .allow_empty(true)
+            .interact_text()?;
+        config
+            .network
+            .get_or_insert_with(Network::default)
+            .extra_egress_hosts = hosts_str
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+    } else if let Some(network) = config.network.as_mut() {
+        network.extra_egress_hosts.clear();
     }
 
     // ── Write files ──────────────────────────────────────────────────────
