@@ -84,6 +84,10 @@ services:
       - workspaces:/workspaces
       - workspace:/workspace
       - dind-storage:/var/lib/docker
+      # Per-workflow secrets bundle: takuto-data must be visible to the DinD
+      # daemon at /shared-auth/takuto-data so workers can bind-mount the
+      # per-user secrets at /run/takuto-secrets.
+      - takuto-data:/shared-auth/takuto-data
       # Auth + tools volumes shared with worker containers
       - takuto-tools:/shared-auth/takuto-tools
       - claude-auth:/shared-auth/claude

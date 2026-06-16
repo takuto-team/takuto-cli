@@ -95,6 +95,13 @@ services:
       - workspaces:/workspaces
       - workspace:/workspace
       - dind-storage:/var/lib/docker
+      # Per-workflow secrets bundle: the takuto-data volume (mounted at
+      # /home/takuto/.takuto in takuto) must also be visible to the DinD
+      # daemon here at /shared-auth/takuto-data, so worker containers can
+      # bind-mount the per-user secrets (Cursor key, PAT, etc.) at
+      # /run/takuto-secrets. Without it the mount is empty and agents fail
+      # with "secret files vanished (host TempDir dropped)".
+      - takuto-data:/shared-auth/takuto-data
       # Auth + tools volumes shared with worker containers
       - takuto-tools:/shared-auth/takuto-tools
       - claude-auth:/shared-auth/claude
