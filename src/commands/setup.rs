@@ -181,12 +181,10 @@ pub fn run() -> Result<()> {
     println!(
         "\n  {} Setup complete! Next steps:\n\
          \n    1. Run {} to authenticate with GitHub and your AI provider\
-         \n    2. Run {} to start Takuto\
-         \n    3. Open {} and create your admin account on the first-boot page\
-         \n    4. Clone your repository from the dashboard's {} button\n",
+         \n    2. Open {} and create your admin account on the first-boot page\
+         \n    3. Clone your repository from the dashboard's {} button\n",
         style("✓").green().bold(),
         style("takuto auth").cyan().bold(),
-        style("takuto start").cyan().bold(),
         style(format!("http://localhost:{}", config.web.port))
             .cyan()
             .underlined(),
