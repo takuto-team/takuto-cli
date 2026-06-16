@@ -1,6 +1,6 @@
 [package]
 name = "takuto"
-version = "0.4.10"
+version = "0.5.0"
 edition = "2021"
 description = "Interactive CLI for managing Takuto orchestration containers"
 publish = false
