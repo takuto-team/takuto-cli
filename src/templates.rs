@@ -155,3 +155,40 @@ volumes:
   dind-storage:
   vscode-data:
 "#;
+
+#[cfg(test)]
+mod tests {
+    use super::DOCKER_COMPOSE;
+
+    /// Gate the DinD topology in the generated compose. These markers are what
+    /// make editor/terminal and the per-workflow secrets bundle work; a
+    /// regression here reintroduces "upstream unavailable" (editor proxy can't
+    /// reach the worker) and "secret files vanished" (worker can't see the
+    /// secrets dir) on fresh installs.
+    #[test]
+    fn docker_compose_uses_shared_dind_netns_and_secrets_volume() {
+        // Shared network namespace → dashboard proxy reaches editor/terminal.
+        assert!(
+            DOCKER_COMPOSE.contains("network_mode: \"service:dind\""),
+            "takuto must share the DinD network namespace"
+        );
+        assert!(
+            DOCKER_COMPOSE.contains("DOCKER_HOST=tcp://127.0.0.1:2375"),
+            "DOCKER_HOST must be localhost in the shared-netns model"
+        );
+        // takuto-data visible to the DinD daemon → secrets bundle mounts.
+        assert!(
+            DOCKER_COMPOSE.contains("takuto-data:/shared-auth/takuto-data"),
+            "takuto-data must be mounted into the DinD daemon for the secrets bundle"
+        );
+        assert!(
+            DOCKER_COMPOSE.contains("TAKUTO_DIND_DATA_PREFIX=/shared-auth/takuto-data"),
+            "the secrets-bundle path-translation prefix must be set"
+        );
+        // The obsolete separate-netns + port-offset model must not return.
+        assert!(
+            !DOCKER_COMPOSE.contains("TAKUTO_DIND_PORT_OFFSET"),
+            "the obsolete port-offset model must not be reintroduced"
+        );
+    }
+}
