@@ -85,6 +85,29 @@ pub fn run() -> Result<()> {
         config.database = None;
     }
 
+    // ── Network ──────────────────────────────────────────────────────────
+    // Egress is restricted by default. Authorizing all HTTPS URLs lets the
+    // sandbox reach any host over HTTPS; other egress rules are managed from
+    // the dashboard.
+    let allow_all_https = Confirm::new()
+        .with_prompt("Authorize all HTTPS URLs in egress rules?")
+        .default(
+            config
+                .network
+                .as_ref()
+                .and_then(|n| n.allow_all_https)
+                .unwrap_or(false),
+        )
+        .interact()?;
+    if allow_all_https {
+        config
+            .network
+            .get_or_insert_with(Network::default)
+            .allow_all_https = Some(true);
+    } else if let Some(network) = config.network.as_mut() {
+        network.allow_all_https = None;
+    }
+
     // ── Write files ──────────────────────────────────────────────────────
     println!();
     section_header("Writing files");
