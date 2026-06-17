@@ -1,8 +1,37 @@
-# Takuto
+<div align="center">
 
-**The companion CLI for [Takuto Core](https://github.com/takuto-team/takuto-core) — set up and manage your AI coding pipeline in minutes.**
+# Takuto CLI
 
-Takuto Core is an AI coding pipeline that works at your pace: poll Jira or GitHub Issues automatically, run the full pipeline overnight (branch → implement → review → test → PR), or stay in the driver's seat and trigger each phase manually from the dashboard. The `takuto` CLI takes care of the boring part — generating config files, orchestrating Docker Compose, and running auth flows — so you can focus on what matters.
+**The fastest way to run [Takuto](https://github.com/takuto-team/takuto-core) — AI coding
+agents that turn Jira and GitHub tickets into pull requests, isolated and under your
+control.**
+
+Install, run `takuto setup` then `takuto start`, and open the dashboard. The CLI generates
+your config and orchestrates Docker / Podman Compose so you don't have to.
+
+[Documentation](https://takuto-doc.alexandre-obellianne.workers.dev) ·
+[Quick start](https://takuto-doc.alexandre-obellianne.workers.dev/docs/quick-start/) ·
+[Takuto Core (engine)](https://github.com/takuto-team/takuto-core)
+
+![License: MIT](https://img.shields.io/badge/license-MIT-2ea043?style=flat)
+![Status: beta](https://img.shields.io/badge/status-beta-ffb454?style=flat)
+![Install: Homebrew](https://img.shields.io/badge/install-Homebrew-8b7cf6?style=flat)
+
+</div>
+
+<!-- TODO(launch): replace with a short demo GIF — `takuto start`, then the dashboard
+     turning a ticket into a PR. Suggested path: docs/demo.gif -->
+<!-- ![Takuto, from one command to a running dashboard](docs/demo.gif) -->
+
+**What it is.** `takuto` is the companion CLI for **[Takuto Core](https://github.com/takuto-team/takuto-core)**,
+the self-hosted AGPL engine. It handles the boring parts — generating config, orchestrating
+Compose, and optional auth flows — so a self-hosted pipeline is up in two commands. The
+agent itself (Claude Code, Cursor Agent, Codex, or OpenCode for self-hosted models) runs
+inside Takuto Core; there's **no telemetry**, and your code goes only to the provider you
+configure.
+
+The rest of this README goes from quick start down to full reference. For the polished
+guides, see the **[documentation site](https://takuto-doc.alexandre-obellianne.workers.dev)**.
 
 ---
 
