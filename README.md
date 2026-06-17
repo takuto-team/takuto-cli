@@ -13,9 +13,9 @@ your config and orchestrates Docker / Podman Compose so you don't have to.
 [Quick start](https://takuto-doc.alexandre-obellianne.workers.dev/docs/quick-start/) ·
 [Takuto Core (engine)](https://github.com/takuto-team/takuto-core)
 
-![License: MIT](https://img.shields.io/badge/license-MIT-2ea043?style=flat)
-![Status: beta](https://img.shields.io/badge/status-beta-ffb454?style=flat)
-![Install: Homebrew](https://img.shields.io/badge/install-Homebrew-8b7cf6?style=flat)
+![License: MIT](docs/badges/license-mit.svg)
+![Status: beta](docs/badges/status-beta.svg)
+![Install: Homebrew](docs/badges/install-homebrew.svg)
 
 </div>
 
