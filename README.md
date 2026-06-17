@@ -35,6 +35,21 @@ guides, see the **[documentation site](https://takuto-doc.alexandre-obellianne.w
 
 ---
 
+## What makes it different
+
+- **Isolated by container.** Every workflow runs in its own container and git worktree,
+  behind a default-deny egress firewall — the prompt-injection blast radius is one container,
+  not your machine or your network.
+- **Define the architecture, then let it run.** You set the approach — the ticket/spec and the
+  workflow steps — and the agent does the legwork autonomously. Step in only at the end to
+  fine-tune through the in-browser VS Code editor or web terminal (pointed at the exact
+  worktree) if the result needs a human touch.
+- **AI-assisted ticket prep.** Sharpen a ticket with AI help *before* the agent ever sees it,
+  so it works from a clear, complete spec instead of a vague one — better input, better PR.
+- **Run your app from a clean container.** Custom run commands launch your dev server / app
+  inside the isolated container on the server (with port forwarding), so you can preview and
+  verify the agent's work in a fresh environment — no "works on my machine".
+
 ## What you can achieve
 
 - **Fully automated mode** — connect Jira or GitHub Issues and Takuto polls automatically: it picks up "To Do" tickets, runs the full AI pipeline (worktree → install → implement → lint/tests → PR), and moves on to the next one.
@@ -131,59 +146,58 @@ docker pull ghcr.io/takuto-team/takuto-core:latest
 > gh auth token | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
 > ```
 
-### 3. Set up your project
-
-Create a directory for your project and run the interactive setup wizard:
+### 3. Generate your config
 
 ```bash
-mkdir my-project && cd my-project
 takuto setup
 ```
 
-The wizard asks about ticketing system, AI provider/model, branch, ports, and (optionally) an external database, then generates all required files:
+The wizard is short — the dashboard handles most configuration, so it only asks for the
+**dashboard port** and, if you use an external database (Postgres / MySQL / MariaDB), its
+**connection details** (otherwise it defaults to built-in SQLite). It generates `takuto.yml`
+plus a `.takuto/` folder:
 
 ```
-my-project/
-  takuto.yml                      # Docker Compose orchestration (+ DinD sidecar)
-  .takuto/
-    config.toml                    # bootstrap configuration (mounted read-write)
-    takuto.env                    # secrets and API tokens
-    workflows/                     # pipeline definitions (auto-discovered)
-      implement_ticket.toml
-      merge_base.toml
-      address_pr_comments.toml
+takuto.yml                      # Docker Compose orchestration (+ DinD sidecar)
+.takuto/
+  config.toml                    # bootstrap configuration (mounted read-write)
+  takuto.env                    # secrets and API tokens
+  workflows/                     # pipeline definitions (auto-discovered)
+    implement_ticket.toml
+    merge_base.toml
+    address_pr_comments.toml
 ```
 
-> The wizard no longer asks for a repository URL or dashboard credentials — you
-> clone repositories and create your admin account from the dashboard itself
-> (see steps 5–6). See [What moved to the dashboard](#what-moved-to-the-dashboard).
+The `.takuto/` folder is created **wherever you run the command** — it doesn't have to be a
+project directory; run `takuto setup`/`takuto start` from different folders to keep isolated
+Takuto instances side by side. Ticketing, AI provider/models, polling, repositories, and your
+admin account are all configured later from the dashboard
+(see [What moved to the dashboard](#what-moved-to-the-dashboard)).
 
-### 4. Authenticate
-
-```bash
-takuto auth
-```
-
-This runs the first-time authentication flow inside the container:
-1. **GitHub CLI** (`gh`) — required for creating PRs
-2. **Atlassian CLI** (`acli`) — only if you chose Jira
-3. **Claude Code** / **Cursor Agent** / **Codex** / **OpenCode** — your AI provider
-
-### 5. Start Takuto
+### 4. Start Takuto
 
 ```bash
 takuto start
 ```
 
-Open **http://localhost:8080** in your browser.
+Open **http://localhost:8080** in your browser — or whichever port you chose for the
+dashboard during `takuto setup`. On first boot you create the initial **admin** account.
 
-### 6. Create your admin account and add a repository
+### 5. Authenticate and add a repository
 
-Takuto is **multi-user**. On first boot the dashboard shows a setup page —
-the account you create there becomes the initial **admin**. Then:
+Takuto is **multi-user**; the account you create on first boot is the initial **admin**.
+From the dashboard:
 
+- **Connect your AI provider and GitHub** under **Configuration → My Credentials** — set
+  credentials like `ANTHROPIC_API_KEY`, `CURSOR_API_KEY`, `OPENAI_API_KEY` and a scoped
+  `GH_TOKEN` (or put them in `.takuto/takuto.env` beforehand).
 - Click **"Setup a New Project"** to clone the repository you want Takuto to work on.
-- If you configured Jira or GitHub Issues, polling starts automatically. Otherwise click **+** to paste a description and kick off a workflow manually.
+- If you configured **Jira** or **GitHub Issues**, polling starts automatically. Otherwise
+  click **+** to paste a description and kick off a workflow manually.
+
+> **Optional — `takuto auth` (not recommended).** Runs interactive **OAuth** logins (GitHub
+> + your AI provider) from the CLI. OAuth grants broad account access, so prefer the scoped
+> API keys/tokens above. Use it only if you specifically need the interactive flow.
 
 ### Other commands
 
