@@ -11,8 +11,7 @@ pub const TAKUTO_ENV: &str = include_str!("../examples/react-vite/.takuto/takuto
 pub const DOCKER_COMPOSE: &str = r#"# Takuto — Docker Compose with workflow isolation (DinD sidecar)
 #
 # Usage:
-#   takuto start                # start services
-#   takuto auth                 # first-time auth
+#   takuto start                # start services, then follow the setup wizard
 #   takuto stop                 # stop services
 #
 # Or manually:
