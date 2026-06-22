@@ -44,8 +44,13 @@ services:
       - ./.takuto/takuto.env:/etc/takuto/env:ro
       # Persistent state: snapshots, takuto.db (users/sessions), secret.key
       - takuto-data:/home/takuto/.takuto
-      # Admin-provisioned tools ([provisioning].install_commands)
-      - takuto-tools:/opt/takuto-tools/bin
+      # Runtime-installed agent CLIs + admin-provisioned tools
+      # ([provisioning].install_commands). Mounted at the PARENT
+      # /opt/takuto-tools (not /bin) so the whole install tree — bin/ symlinks
+      # plus their lib/ (npm) and share/ (cursor) targets — lives in the volume
+      # and reaches workers through DinD; mounting only /bin leaves the symlinks
+      # dangling in workers.
+      - takuto-tools:/opt/takuto-tools
       - claude-auth:/home/takuto/.claude
       - cursor-auth:/home/takuto/.cursor
       - agents-data:/home/takuto/.agents
@@ -110,8 +115,12 @@ services:
       # /run/takuto-secrets. Without it the mount is empty and agents fail
       # with "secret files vanished (host TempDir dropped)".
       - takuto-data:/shared-auth/takuto-data
-      # Auth + tools volumes shared with worker containers
-      - takuto-tools:/shared-auth/takuto-tools
+      # Auth + tools volumes shared with worker containers. The tools tree MUST
+      # be at /opt/takuto-tools here (not /shared-auth/...): the DinD daemon
+      # launches the workers, and the worker run bind-mounts
+      # /opt/takuto-tools:/opt/takuto-tools:ro, so the populated tree has to be
+      # visible to this daemon at that exact path or every agent CLI is missing.
+      - takuto-tools:/opt/takuto-tools
       - claude-auth:/shared-auth/claude
       - cursor-auth:/shared-auth/cursor
       - agents-data:/shared-auth/agents
@@ -188,6 +197,35 @@ mod tests {
         assert!(
             !DOCKER_COMPOSE.contains("TAKUTO_DIND_PORT_OFFSET"),
             "the obsolete port-offset model must not be reintroduced"
+        );
+    }
+
+    /// Gate the runtime tools tree (agent CLIs + provisioned tools). The image
+    /// no longer bakes the agent CLIs into /usr/local/bin; they are installed at
+    /// runtime into the `takuto-tools` volume. Both takuto and the DinD daemon
+    /// must mount that volume at the PARENT `/opt/takuto-tools` so the full tree
+    /// (bin/ symlinks + lib//share/ targets) reaches workers — the worker run
+    /// bind-mounts `/opt/takuto-tools:/opt/takuto-tools:ro` from the DinD daemon.
+    /// A regression here reintroduces `sh: exec: agent: not found` on fresh
+    /// installs (workers see an empty or symlink-only tools dir).
+    #[test]
+    fn docker_compose_shares_full_tools_tree_at_opt_takuto_tools() {
+        // Both services mount the volume at the parent, exactly twice.
+        let parent_mounts = DOCKER_COMPOSE.matches("takuto-tools:/opt/takuto-tools\n").count();
+        assert_eq!(
+            parent_mounts, 2,
+            "takuto and dind must both mount takuto-tools at /opt/takuto-tools (the parent)"
+        );
+        // The old bin-only mount (volume misses lib//share/) must not return.
+        assert!(
+            !DOCKER_COMPOSE.contains("takuto-tools:/opt/takuto-tools/bin"),
+            "takuto-tools must not be mounted at /opt/takuto-tools/bin — symlinks would dangle in workers"
+        );
+        // The DinD daemon must expose the tree at /opt/takuto-tools, not under
+        // /shared-auth, or the worker bind-mount finds nothing.
+        assert!(
+            !DOCKER_COMPOSE.contains("takuto-tools:/shared-auth/takuto-tools"),
+            "the DinD daemon must expose takuto-tools at /opt/takuto-tools, not /shared-auth"
         );
     }
 }
