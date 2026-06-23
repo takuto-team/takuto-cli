@@ -1,5 +1,6 @@
 mod commands;
 mod config;
+mod dbwire;
 mod runtime;
 mod templates;
 

@@ -1,6 +1,6 @@
 use anyhow::Result;
 use console::style;
-use dialoguer::{Confirm, Input};
+use dialoguer::{Confirm, Input, Select};
 use std::fs;
 use std::path::Path;
 
@@ -59,16 +59,43 @@ pub fn run() -> Result<()> {
         .interact()?
     {
         section_header("Database");
+
+        // Where the DB lives changes how it must be reached from inside Takuto's
+        // (DinD-shared) network namespace. A container on this machine can be
+        // auto-wired from the host-facing URL the user already knows; a remote or
+        // host-native database needs a URL that is reachable as-is.
+        let kinds = [
+            "A database container running on this machine (auto-wire it)",
+            "A remote or host-native database (I'll provide a reachable URL)",
+        ];
+        let prev_local = config
+            .database
+            .as_ref()
+            .and_then(|d| d.local_container)
+            .unwrap_or(false);
+        let kind = Select::new()
+            .with_prompt("Where is your database?")
+            .items(&kinds)
+            .default(if prev_local { 0 } else { 1 })
+            .interact()?;
+        let local_container = kind == 0;
+
         let existing_conn = config
             .database
             .as_ref()
             .map(|d| d.connection.clone())
             .unwrap_or_default();
+        let prompt = if local_container {
+            "Connection URL as you'd use it from your host (e.g. postgres://user:pw@localhost:5433/takuto)"
+        } else {
+            "Connection URL (postgres://… | mysql://… | sqlite://…)"
+        };
         let conn: String = Input::new()
-            .with_prompt("Connection URL (postgres://… | mysql://… | sqlite://…)")
+            .with_prompt(prompt)
             .default(existing_conn)
             .allow_empty(true)
             .interact_text()?;
+
         config.database = if conn.is_empty() {
             None
         } else {
@@ -79,8 +106,18 @@ pub fn run() -> Result<()> {
                 idle_timeout_secs: None,
                 fail_fast: None,
                 import_from_sqlite: None,
+                local_container: if local_container { Some(true) } else { None },
             })
         };
+
+        if local_container && config.database.is_some() {
+            println!(
+                "  {} On `takuto start`, Takuto will find the container behind that port, \
+                 attach it to its network as `{}`, and rewrite the connection accordingly.",
+                style("ℹ").cyan().bold(),
+                crate::dbwire::ALIAS,
+            );
+        }
     } else {
         config.database = None;
     }

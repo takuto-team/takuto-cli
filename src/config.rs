@@ -272,6 +272,14 @@ pub struct Database {
     pub fail_fast: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub import_from_sqlite: Option<bool>,
+    /// Set by `takuto setup` when the user points at a database **container
+    /// running on this machine**. The connection URL is then the host-facing one
+    /// (e.g. `…@localhost:5433/…`); on `takuto start` the CLI resolves the
+    /// published port to its container, attaches it to Takuto's network under the
+    /// `takuto_db` alias, and writes a container-facing
+    /// `TAKUTO_DATABASE_CONNECTION` into `takuto.env`. See `crate::dbwire`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub local_container: Option<bool>,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -403,6 +411,7 @@ mod tests {
             acquire_timeout_secs: None,
             idle_timeout_secs: None,
             import_from_sqlite: None,
+            local_container: None,
         });
         cfg.provisioning = Some(Provisioning {
             install_commands: vec!["echo hi".into()],
